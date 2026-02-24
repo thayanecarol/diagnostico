@@ -563,7 +563,7 @@
 
   // Hash da senha — nunca exposta no código
   // SHA-256 de "thay2026*"
-  const ADMIN_HASH = "b2d3b08b3f9f2a4e1c6d8e7a5f0c9b2d1e4a7f6c3b8d2e5a9f1c4b7e0d3a6f2";
+  const ADMIN_HASH = "631a22cc072d7a3e705ee6a303d2572c838ed0619fa54177bc69a68231ac323a";
 
   async function sha256(str) {
     const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
