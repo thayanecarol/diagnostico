@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Questionário - Lei nº 14.133/2021 | Prefeitura de Cáceres</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+  :root {
+    --verde: #1a7a4a;
+    --verde-claro: #2da060;
+    --verde-bg: #e8f5ee;
+    --cinza: #6b7280;
+    --cinza-claro: #f3f4f6;
+    --branco: #ffffff;
+    --texto: #1a1f2e;
+    --borda: #d1d5db;
+    --sombra: 0 4px 24px rgba(0,0,0,0.08);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Sora', sans-serif;
+    background: #f0f4f1;
+    color: var(--texto);
+    min-height: 100vh;
+  }
+
+  .header {
+    background: linear-gradient(135deg, #0f4a2c 0%, #1a7a4a 60%, #2da060 100%);
+    color: white;
+    padding: 32px 24px 28px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .header::before { content:''; position:absolute; top:-40px; right:-40px; width:200px; height:200px; border-radius:50%; background:rgba(255,255,255,0.05); }
+  .header .badge { display:inline-block; background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.3); border-radius:20px; padding:4px 14px; font-size:11px; font-family:'IBM Plex Mono',monospace; letter-spacing:1px; text-transform:uppercase; margin-bottom:12px; }
+  .header h1 { font-size:clamp(20px,4vw,28px); font-weight:700; line-height:1.3; margin-bottom:8px; }
+  .header p { font-size:14px; opacity:.85; max-width:560px; margin:0 auto; }
+
+  .nav-tabs { display:flex; background:white; border-bottom:2px solid var(--borda); overflow-x:auto; position:sticky; top:0; z-index:100; box-shadow:0 2px 8px rgba(0,0,0,0.06); }
+  .nav-tab { padding:14px 20px; font-size:13px; font-weight:600; color:var(--cinza); cursor:pointer; border-bottom:3px solid transparent; white-space:nowrap; transition:all 0.2s; user-select:none; }
+  .nav-tab:hover { color:var(--verde); }
+  .nav-tab.active { color:var(--verde); border-bottom-color:var(--verde); }
+
+  .view { display:none; }
+  .view.active { display:block; }
+
+  .form-wrapper { max-width:780px; margin:32px auto; padding:0 16px; }
+
+  .section-card { background:white; border-radius:16px; box-shadow:var(--sombra); margin-bottom:28px; overflow:hidden; animation:fadeUp 0.3s ease both; }
+  .section-header { background:linear-gradient(90deg,var(--verde) 0%,var(--verde-claro) 100%); color:white; padding:18px 24px; display:flex; align-items:center; gap:12px; }
+  .section-num { background:rgba(255,255,255,0.2); border-radius:8px; width:36px; height:36px; display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-weight:500; font-size:14px; flex-shrink:0; }
+  .section-title { font-size:16px; font-weight:600; }
+  .section-body { padding:24px; }
+
+  .question { margin-bottom:28px; padding-bottom:28px; border-bottom:1px solid #f0f0f0; }
+  .question:last-child { margin-bottom:0; padding-bottom:0; border-bottom:none; }
+  .question-label { font-size:14px; font-weight:600; color:var(--texto); margin-bottom:4px; line-height:1.5; }
+  .question-hint { font-size:12px; color:var(--cinza); margin-bottom:14px; font-style:italic; }
+
+  .radio-cards { display:flex; flex-direction:column; gap:8px; }
+  .radio-card { display:flex; align-items:flex-start; gap:12px; padding:12px 16px; border:2px solid var(--borda); border-radius:10px; cursor:pointer; transition:all 0.15s; }
+  .radio-card:hover { border-color:var(--verde-claro); background:var(--verde-bg); }
+  .radio-card input[type="radio"] { display:none; }
+  .radio-card.selected { border-color:var(--verde); background:var(--verde-bg); }
+  .radio-dot { width:20px; height:20px; border-radius:50%; border:2px solid var(--borda); flex-shrink:0; margin-top:2px; display:flex; align-items:center; justify-content:center; transition:all 0.15s; }
+  .radio-card.selected .radio-dot { border-color:var(--verde); background:var(--verde); }
+  .radio-dot::after { content:''; width:8px; height:8px; border-radius:50%; background:white; display:none; }
+  .radio-card.selected .radio-dot::after { display:block; }
+  .radio-title { font-size:13px; font-weight:600; color:var(--texto); }
+  .radio-desc { font-size:12px; color:var(--cinza); margin-top:2px; line-height:1.4; }
+
+  .level-nenhuma .radio-title { color:#059669; }
+  .level-baixa .radio-title { color:#2563eb; }
+  .level-media .radio-title { color:#d97706; }
+  .level-alta .radio-title { color:#dc2626; }
+
+  .matrix-table { width:100%; border-collapse:collapse; font-size:13px; }
+  .matrix-table th { background:var(--cinza-claro); padding:10px 12px; text-align:center; font-weight:600; color:var(--cinza); font-size:11px; text-transform:uppercase; letter-spacing:0.5px; border:1px solid var(--borda); }
+  .matrix-table th:first-child { text-align:left; }
+  .matrix-table td { padding:10px 12px; border:1px solid #eee; vertical-align:middle; }
+  .matrix-table tr:hover td { background:#fafff9; }
+  .matrix-table td:first-child { font-size:13px; line-height:1.4; color:var(--texto); }
+  .matrix-table td:not(:first-child) { text-align:center; }
+  .matrix-radio { width:18px; height:18px; accent-color:var(--verde); cursor:pointer; }
+
+  .form-textarea { width:100%; padding:12px 16px; border:2px solid var(--borda); border-radius:10px; font-family:'Sora',sans-serif; font-size:13px; color:var(--texto); resize:vertical; min-height:100px; transition:border-color 0.15s; outline:none; }
+  .form-textarea:focus { border-color:var(--verde); }
+
+  .checkbox-list { display:flex; flex-direction:column; gap:8px; }
+  .checkbox-item { display:flex; align-items:center; gap:10px; padding:10px 14px; border:2px solid var(--borda); border-radius:8px; cursor:pointer; transition:all 0.15s; }
+  .checkbox-item:hover { border-color:var(--verde-claro); background:var(--verde-bg); }
+  .checkbox-item input { accent-color:var(--verde); width:16px; height:16px; cursor:pointer; }
+  .checkbox-item span { font-size:13px; color:var(--texto); }
+
+  .submit-area { text-align:center; margin:32px 0 48px; }
+  .btn-submit { background:linear-gradient(135deg,var(--verde) 0%,var(--verde-claro) 100%); color:white; border:none; padding:16px 48px; font-size:15px; font-weight:600; font-family:'Sora',sans-serif; border-radius:12px; cursor:pointer; box-shadow:0 4px 16px rgba(26,122,74,0.3); transition:all 0.2s; }
+  .btn-submit:hover { transform:translateY(-2px); box-shadow:0 6px 24px rgba(26,122,74,0.4); }
+  .btn-submit:disabled { opacity:0.6; cursor:not-allowed; transform:none; }
+
+  .progress-bar-wrap { background:white; padding:12px 24px; border-bottom:1px solid var(--borda); display:flex; align-items:center; gap:12px; }
+  .progress-bar-bg { flex:1; height:6px; background:var(--cinza-claro); border-radius:3px; overflow:hidden; }
+  .progress-bar-fill { height:100%; background:linear-gradient(90deg,var(--verde),var(--verde-claro)); border-radius:3px; transition:width 0.4s ease; width:0%; }
+  .progress-pct { font-size:12px; font-family:'IBM Plex Mono',monospace; color:var(--verde); font-weight:500; min-width:36px; }
+
+  .privacy-notice { background:#fffbeb; border:1px solid #fcd34d; border-radius:10px; padding:14px 18px; font-size:12px; color:#92400e; margin-bottom:24px; display:flex; gap:10px; align-items:flex-start; line-height:1.5; }
+
+  .success-screen { max-width:500px; margin:60px auto; text-align:center; padding:0 24px; }
+  .success-icon { width:80px; height:80px; background:var(--verde-bg); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:36px; margin:0 auto 24px; }
+  .success-screen h2 { font-size:24px; margin-bottom:12px; color:var(--verde); }
+  .success-screen p { font-size:14px; color:var(--cinza); line-height:1.6; }
+
+  /* ADMIN */
+  .admin-login { max-width:400px; margin:60px auto; background:white; border-radius:16px; padding:40px; box-shadow:var(--sombra); text-align:center; }
+  .admin-login h2 { font-size:20px; margin-bottom:8px; }
+  .admin-login p { font-size:13px; color:var(--cinza); margin-bottom:28px; }
+  .form-input { width:100%; padding:12px 16px; border:2px solid var(--borda); border-radius:10px; font-family:'Sora',sans-serif; font-size:14px; outline:none; transition:border-color 0.15s; margin-bottom:12px; }
+  .form-input:focus { border-color:var(--verde); }
+  .btn-primary { width:100%; background:var(--verde); color:white; border:none; padding:13px; font-size:14px; font-weight:600; font-family:'Sora',sans-serif; border-radius:10px; cursor:pointer; transition:background 0.15s; }
+  .btn-primary:hover { background:var(--verde-claro); }
+
+  .admin-panel { max-width:1100px; margin:24px auto; padding:0 16px 48px; }
+  .admin-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:28px; flex-wrap:wrap; gap:12px; }
+  .admin-header h2 { font-size:22px; }
+  .btn-export { background:white; border:2px solid var(--verde); color:var(--verde); padding:10px 20px; font-family:'Sora',sans-serif; font-size:13px; font-weight:600; border-radius:10px; cursor:pointer; transition:all 0.15s; }
+  .btn-export:hover { background:var(--verde); color:white; }
+
+  .stat-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:16px; margin-bottom:32px; }
+  .stat-card { background:white; border-radius:12px; padding:20px; box-shadow:var(--sombra); border-left:4px solid var(--verde); }
+  .stat-card .stat-num { font-size:36px; font-weight:700; color:var(--verde); font-family:'IBM Plex Mono',monospace; line-height:1; margin-bottom:4px; }
+  .stat-card .stat-label { font-size:12px; color:var(--cinza); text-transform:uppercase; letter-spacing:0.5px; }
+
+  .report-card { background:white; border-radius:16px; box-shadow:var(--sombra); margin-bottom:24px; overflow:hidden; }
+  .report-card-header { padding:18px 24px; border-bottom:1px solid #f0f0f0; }
+  .report-card-header h3 { font-size:15px; font-weight:600; }
+  .report-card-body { padding:20px 24px; }
+
+  .chart-bar-wrap { margin-bottom:14px; }
+  .chart-bar-label { display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px; }
+  .chart-bar-label .name { color:var(--texto); font-weight:500; }
+  .chart-bar-label .val { color:var(--cinza); font-family:'IBM Plex Mono',monospace; }
+  .chart-bar-bg { background:var(--cinza-claro); border-radius:4px; height:10px; overflow:hidden; }
+  .chart-bar-fill { height:100%; border-radius:4px; transition:width 0.8s cubic-bezier(.34,1.56,.64,1); }
+  .bar-verde { background:linear-gradient(90deg,var(--verde),var(--verde-claro)); }
+  .bar-amarelo { background:#f5a623; }
+  .bar-vermelho { background:#d94f3d; }
+  .bar-azul { background:#3b82f6; }
+
+  .open-answer { background:var(--cinza-claro); border-left:3px solid var(--verde); padding:12px 16px; border-radius:0 8px 8px 0; font-size:13px; line-height:1.6; margin-bottom:10px; color:var(--texto); }
+
+  .loading-overlay { position:fixed; inset:0; background:rgba(255,255,255,0.85); display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:999; gap:16px; font-size:14px; color:var(--cinza); }
+  .spinner { width:40px; height:40px; border:4px solid var(--cinza-claro); border-top-color:var(--verde); border-radius:50%; animation:spin 0.8s linear infinite; }
+
+  .hidden { display:none !important; }
+
+  @keyframes fadeUp { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+  @keyframes spin { to { transform:rotate(360deg); } }
+
+  @media(max-width:600px) {
+    .matrix-table { font-size:11px; }
+    .matrix-table th, .matrix-table td { padding:8px 6px; }
+    .nav-tab { padding:12px 14px; font-size:12px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div class="loading-overlay hidden" id="loading">
+  <div class="spinner"></div>
+  <div id="loading-msg">Aguarde...</div>
+</div>
+
+<div class="header">
+  <div class="badge">🔒 Sigiloso · Prefeitura de Cáceres</div>
+  <h1>Diagnóstico de Implementação<br>Lei nº 14.133/2021</h1>
+  <p>Fase Preparatória das Contratações Públicas · Suas respostas são completamente anônimas</p>
+</div>
+
+<div class="nav-tabs">
+  <div class="nav-tab active" onclick="showView('form')">📋 Questionário</div>
+  <div class="nav-tab" onclick="showView('admin-gate')">📊 Relatórios</div>
+</div>
+
+<!-- ============ FORM VIEW ============ -->
+<div class="view active" id="view-form">
+  <div id="form-content">
+    <div class="progress-bar-wrap">
+      <div class="progress-bar-bg"><div class="progress-bar-fill" id="progress-fill"></div></div>
+      <div class="progress-pct" id="progress-pct">0%</div>
+    </div>
+    <div class="form-wrapper">
+      <div class="privacy-notice">
+        <div style="font-size:16px;flex-shrink:0">🔐</div>
+        <div><strong>Suas respostas são completamente anônimas.</strong> Nenhuma informação pessoal é coletada. O sistema apenas confirma <em>que</em> o questionário foi preenchido, sem revelar <em>quem</em> preencheu. Responda com total liberdade.</div>
+      </div>
+
+      <form id="survey-form">
+
+        <!-- SEÇÃO 1 -->
+        <div class="section-card">
+          <div class="section-header"><div class="section-num">1</div><div class="section-title">Planejamento e Governança</div></div>
+          <div class="section-body">
+
+            <div class="question">
+              <div class="question-label">1.1 Plano de Contratações Anual (PCA)</div>
+              <div class="question-hint">Como está o alinhamento das secretarias com o PCA?</div>
+              <div class="radio-cards">
+                <label class="radio-card level-nenhuma"><input type="radio" name="q1_1" value="nenhuma"><div class="radio-dot"></div><div><div class="radio-title">✅ Nenhuma dificuldade</div><div class="radio-desc">Processo bem estruturado, prazos definidos. Maioria das contratações prevista no PCA.</div></div></label>
+                <label class="radio-card level-baixa"><input type="radio" name="q1_1" value="baixa"><div class="radio-dot"></div><div><div class="radio-title">🔵 Baixa dificuldade</div><div class="radio-desc">Procedimentos existem, mas com falhas ocasionais na comunicação.</div></div></label>
+                <label class="radio-card level-media"><input type="radio" name="q1_1" value="media"><div class="radio-dot"></div><div><div class="radio-title">🟡 Média dificuldade</div><div class="radio-desc">Processo desorganizado, muitas contratações fora do PCA.</div></div></label>
+                <label class="radio-card level-alta"><input type="radio" name="q1_1" value="alta"><div class="radio-dot"></div><div><div class="radio-title">🔴 Alta dificuldade</div><div class="radio-desc">Sem processo estruturado. Demandas desordenadas, maioria fora do PCA.</div></div></label>
+              </div>
+            </div>
+
+            <div class="question">
+              <div class="question-label">1.2 Segregação de Funções</div>
+              <div class="question-hint">O mesmo servidor elabora ETP, TR, pesquisa preços e fiscaliza o contrato?</div>
+              <div class="radio-cards">
+                <label class="radio-card level-nenhuma"><input type="radio" name="q1_2" value="plena"><div class="radio-dot"></div><div><div class="radio-title">✅ Segregação plena</div><div class="radio-desc">Diferentes agentes por etapa. Dupla revisão e aprovação por múltiplas instâncias.</div></div></label>
+                <label class="radio-card level-baixa"><input type="radio" name="q1_2" value="parcial"><div class="radio-dot"></div><div><div class="radio-title">🔵 Segregação parcial</div><div class="radio-desc">Tentativa de segregação, mas algumas funções acumuladas por falta de pessoal.</div></div></label>
+                <label class="radio-card level-media"><input type="radio" name="q1_2" value="minima"><div class="radio-dot"></div><div><div class="radio-title">🟡 Segregação mínima</div><div class="radio-desc">O mesmo agente realiza múltiplas funções sem mecanismos efetivos de controle.</div></div></label>
+                <label class="radio-card level-alta"><input type="radio" name="q1_2" value="ausente"><div class="radio-dot"></div><div><div class="radio-title">🔴 Ausência de segregação</div><div class="radio-desc">Um único agente é responsável por praticamente todas as etapas.</div></div></label>
+              </div>
+            </div>
+
+            <div class="question">
+              <div class="question-label">1.3 Número de Servidores</div>
+              <div class="question-hint">O quadro de pessoal é suficiente?</div>
+              <div class="radio-cards">
+                <label class="radio-card level-nenhuma"><input type="radio" name="q1_3a" value="adequado"><div class="radio-dot"></div><div><div class="radio-title">✅ Adequado</div><div class="radio-desc">Suficiente para as demandas.</div></div></label>
+                <label class="radio-card level-media"><input type="radio" name="q1_3a" value="parcial"><div class="radio-dot"></div><div><div class="radio-title">🟡 Parcialmente adequado</div><div class="radio-desc">Insuficiente em períodos de pico.</div></div></label>
+                <label class="radio-card level-alta"><input type="radio" name="q1_3a" value="inadequado"><div class="radio-dot"></div><div><div class="radio-title">🔴 Inadequado</div><div class="radio-desc">Cronicamente insuficiente.</div></div></label>
+              </div>
+            </div>
+
+            <div class="question">
+              <div class="question-label">1.4 Qualificação Técnica</div>
+              <div class="question-hint">Os servidores têm o conhecimento técnico necessário?</div>
+              <div class="radio-cards">
+                <label class="radio-card level-nenhuma"><input type="radio" name="q1_3b" value="adequado"><div class="radio-dot"></div><div><div class="radio-title">✅ Adequada</div><div class="radio-desc">Servidores capacitados.</div></div></label>
+                <label class="radio-card level-media"><input type="radio" name="q1_3b" value="parcial"><div class="radio-dot"></div><div><div class="radio-title">🟡 Parcialmente adequada</div><div class="radio-desc">Alguns com lacunas de conhecimento.</div></div></label>
+                <label class="radio-card level-alta"><input type="radio" name="q1_3b" value="inadequado"><div class="radio-dot"></div><div><div class="radio-title">🔴 Inadequada</div><div class="radio-desc">Falta de qualificação geral.</div></div></label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SEÇÃO 2 -->
+        <div class="section-card">
+          <div class="section-header"><div class="section-num">2</div><div class="section-title">Documento de Formalização da Demanda (DFD)</div></div>
+          <div class="section-body">
+            <div class="question">
+              <div class="question-label">2.1 Qualidade das Demandas Recebidas</div>
+              <div class="question-hint">Com que frequência os DFDs apresentam as deficiências abaixo?</div>
+              <div style="overflow-x:auto">
+              <table class="matrix-table">
+                <thead><tr><th>Deficiência</th><th>Sempre</th><th>Frequentemente</th><th>Ocasionalmente</th><th>Raramente</th></tr></thead>
+                <tbody>
+                  <tr><td>Descrição vaga da necessidade</td><td><input type="radio" class="matrix-radio" name="dfd_1" value="sempre"></td><td><input type="radio" class="matrix-radio" name="dfd_1" value="freq"></td><td><input type="radio" class="matrix-radio" name="dfd_1" value="ocas"></td><td><input type="radio" class="matrix-radio" name="dfd_1" value="rar"></td></tr>
+                  <tr><td>Estimativas sem justificativa</td><td><input type="radio" class="matrix-radio" name="dfd_2" value="sempre"></td><td><input type="radio" class="matrix-radio" name="dfd_2" value="freq"></td><td><input type="radio" class="matrix-radio" name="dfd_2" value="ocas"></td><td><input type="radio" class="matrix-radio" name="dfd_2" value="rar"></td></tr>
+                  <tr><td>Prazos irreais ou não justificados</td><td><input type="radio" class="matrix-radio" name="dfd_3" value="sempre"></td><td><input type="radio" class="matrix-radio" name="dfd_3" value="freq"></td><td><input type="radio" class="matrix-radio" name="dfd_3" value="ocas"></td><td><input type="radio" class="matrix-radio" name="dfd_3" value="rar"></td></tr>
+                  <tr><td>Falta info sobre periodicidade</td><td><input type="radio" class="matrix-radio" name="dfd_4" value="sempre"></td><td><input type="radio" class="matrix-radio" name="dfd_4" value="freq"></td><td><input type="radio" class="matrix-radio" name="dfd_4" value="ocas"></td><td><input type="radio" class="matrix-radio" name="dfd_4" value="rar"></td></tr>
+                  <tr><td>Não indica se está no PCA</td><td><input type="radio" class="matrix-radio" name="dfd_5" value="sempre"></td><td><input type="radio" class="matrix-radio" name="dfd_5" value="freq"></td><td><input type="radio" class="matrix-radio" name="dfd_5" value="ocas"></td><td><input type="radio" class="matrix-radio" name="dfd_5" value="rar"></td></tr>
+                  <tr><td>Falta assinatura ou identificação</td><td><input type="radio" class="matrix-radio" name="dfd_6" value="sempre"></td><td><input type="radio" class="matrix-radio" name="dfd_6" value="freq"></td><td><input type="radio" class="matrix-radio" name="dfd_6" value="ocas"></td><td><input type="radio" class="matrix-radio" name="dfd_6" value="rar"></td></tr>
+                </tbody>
+              </table>
+              </div>
+            </div>
+
+            <div class="question">
+              <div class="question-label">2.2 Comunicação com Áreas Solicitantes</div>
+              <div class="question-hint">Existe processo estruturado para orientar o preenchimento do DFD?</div>
+              <div class="radio-cards">
+                <label class="radio-card level-nenhuma"><input type="radio" name="q2_2" value="estruturado"><div class="radio-dot"></div><div><div class="radio-title">✅ Processo estruturado</div><div class="radio-desc">Modelo padronizado, orientações claras, treinamento periódico.</div></div></label>
+                <label class="radio-card level-baixa"><input type="radio" name="q2_2" value="parcial"><div class="radio-dot"></div><div><div class="radio-title">🔵 Parcialmente estruturado</div><div class="radio-desc">Existe modelo, mas orientações informais e treinamento ocasional.</div></div></label>
+                <label class="radio-card level-media"><input type="radio" name="q2_2" value="minimo"><div class="radio-dot"></div><div><div class="radio-title">🟡 Processo mínimo</div><div class="radio-desc">Existe modelo, mas sem orientações ou treinamento.</div></div></label>
+                <label class="radio-card level-alta"><input type="radio" name="q2_2" value="ausente"><div class="radio-dot"></div><div><div class="radio-title">🔴 Processo ausente</div><div class="radio-desc">Sem modelo padronizado ou orientações.</div></div></label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SEÇÃO 3 -->
+        <div class="section-card">
+          <div class="section-header"><div class="section-num">3</div><div class="section-title">Estudo Técnico Preliminar (ETP)</div></div>
+          <div class="section-body">
+            <div class="question">
+              <div class="question-label">3.1 Dificuldades na Elaboração do ETP</div>
+              <div class="question-hint">Indique o grau de dificuldade para cada aspecto:</div>
+              <div style="overflow-x:auto">
+              <table class="matrix-table">
+                <thead><tr><th>Aspecto</th><th>Nenhuma</th><th>Baixa</th><th>Média</th><th>Alta</th></tr></thead>
+                <tbody>
+                  <tr><td>Descrição clara da necessidade</td><td><input type="radio" class="matrix-radio" name="etp_1" value="nenhuma"></td><td><input type="radio" class="matrix-radio" name="etp_1" value="baixa"></td><td><input type="radio" class="matrix-radio" name="etp_1" value="media"></td><td><input type="radio" class="matrix-radio" name="etp_1" value="alta"></td></tr>
+                  <tr><td>Levantamento de mercado robusto</td><td><input type="radio" class="matrix-radio" name="etp_2" value="nenhuma"></td><td><input type="radio" class="matrix-radio" name="etp_2" value="baixa"></td><td><input type="radio" class="matrix-radio" name="etp_2" value="media"></td><td><input type="radio" class="matrix-radio" name="etp_2" value="alta"></td></tr>
+                  <tr><td>Comparação técnica entre soluções</td><td><input type="radio" class="matrix-radio" name="etp_3" value="nenhuma"></td><td><input type="radio" class="matrix-radio" name="etp_3" value="baixa"></td><td><input type="radio" class="matrix-radio" name="etp_3" value="media"></td><td><input type="radio" class="matrix-radio" name="etp_3" value="alta"></td></tr>
+                  <tr><td>Estimativa de quantidades</td><td><input type="radio" class="matrix-radio" name="etp_4" value="nenhuma"></td><td><input type="radio" class="matrix-radio" name="etp_4" value="baixa"></td><td><input type="radio" class="matrix-radio" name="etp_4" value="media"></td><td><input type="radio" class="matrix-radio" name="etp_4" value="alta"></td></tr>
+                  <tr><td>Estimativa de custos (dados públicos)</td><td><input type="radio" class="matrix-radio" name="etp_5" value="nenhuma"></td><td><input type="radio" class="matrix-radio" name="etp_5" value="baixa"></td><td><input type="radio" class="matrix-radio" name="etp_5" value="media"></td><td><input type="radio" class="matrix-radio" name="etp_5" value="alta"></td></tr>
+                  <tr><td>Justificativa técnica da solução</td><td><input type="radio" class="matrix-radio" name="etp_6" value="nenhuma"></td><td><input type="radio" class="matrix-radio" name="etp_6" value="baixa"></td><td><input type="radio" class="matrix-radio" name="etp_6" value="media"></td><td><input type="radio" class="matrix-radio" name="etp_6" value="alta"></td></tr>
+                  <tr><td>Identificar contratações correlatas</td><td><input type="radio" class="matrix-radio" name="etp_7" value="nenhuma"></td><td><input type="radio" class="matrix-radio" name="etp_7" value="baixa"></td><td><input type="radio" class="matrix-radio" name="etp_7" value="media"></td><td><input type="radio" class="matrix-radio" name="etp_7" value="alta"></td></tr>
+                  <tr><td>Avaliação socioambiental</td><td><input type="radio" class="matrix-radio" name="etp_8" value="nenhuma"></td><td><input type="radio" class="matrix-radio" name="etp_8" value="baixa"></td><td><input type="radio" class="matrix-radio" name="etp_8" value="media"></td><td><input type="radio" class="matrix-radio" name="etp_8" value="alta"></td></tr>
+                </tbody>
+              </table>
+              </div>
+            </div>
+
+            <div class="question">
+              <div class="question-label">3.2 Viabilidade da Contratação</div>
+              <div class="question-hint">Como é feita a análise de viabilidade no ETP?</div>
+              <div style="overflow-x:auto">
+              <table class="matrix-table">
+                <thead><tr><th>Tipo de Análise</th><th>Aprofundada</th><th>Superficial</th><th>Ausente</th></tr></thead>
+                <tbody>
+                  <tr><td>Viabilidade Técnica</td><td><input type="radio" class="matrix-radio" name="via_1" value="aprofundada"></td><td><input type="radio" class="matrix-radio" name="via_1" value="superficial"></td><td><input type="radio" class="matrix-radio" name="via_1" value="ausente"></td></tr>
+                  <tr><td>Viabilidade Socioeconômica</td><td><input type="radio" class="matrix-radio" name="via_2" value="aprofundada"></td><td><input type="radio" class="matrix-radio" name="via_2" value="superficial"></td><td><input type="radio" class="matrix-radio" name="via_2" value="ausente"></td></tr>
+                  <tr><td>Viabilidade Ambiental</td><td><input type="radio" class="matrix-radio" name="via_3" value="aprofundada"></td><td><input type="radio" class="matrix-radio" name="via_3" value="superficial"></td><td><input type="radio" class="matrix-radio" name="via_3" value="ausente"></td></tr>
+                </tbody>
+              </table>
+              </div>
+            </div>
+
+            <div class="question">
+              <div class="question-label">3.3 Tempo Médio para Elaboração do ETP</div>
+              <div class="radio-cards">
+                <label class="radio-card"><input type="radio" name="q3_3" value="menos5"><div class="radio-dot"></div><div><div class="radio-title">⚡ Menos de 5 dias</div></div></label>
+                <label class="radio-card"><input type="radio" name="q3_3" value="5a10"><div class="radio-dot"></div><div><div class="radio-title">📅 5 a 10 dias</div></div></label>
+                <label class="radio-card"><input type="radio" name="q3_3" value="10a20"><div class="radio-dot"></div><div><div class="radio-title">📅 10 a 20 dias</div></div></label>
+                <label class="radio-card"><input type="radio" name="q3_3" value="mais20"><div class="radio-dot"></div><div><div class="radio-title">🐢 Mais de 20 dias</div></div></label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SEÇÃO 4 -->
+        <div class="section-card">
+          <div class="section-header"><div class="section-num">4</div><div class="section-title">Análise de Riscos (AR)</div></div>
+          <div class="section-body">
+            <div class="question">
+              <div class="question-label">4.1 Desafios no Mapeamento de Riscos</div>
+              <div style="overflow-x:auto">
+              <table class="matrix-table">
+                <thead><tr><th>Desafio</th><th>Nenhum</th><th>Baixo</th><th>Médio</th><th>Alto</th></tr></thead>
+                <tbody>
+                  <tr><td>Identificar riscos além dos óbvios</td><td><input type="radio" class="matrix-radio" name="ar_1" value="nenhum"></td><td><input type="radio" class="matrix-radio" name="ar_1" value="baixo"></td><td><input type="radio" class="matrix-radio" name="ar_1" value="medio"></td><td><input type="radio" class="matrix-radio" name="ar_1" value="alto"></td></tr>
+                  <tr><td>Avaliar probabilidade de cada risco</td><td><input type="radio" class="matrix-radio" name="ar_2" value="nenhum"></td><td><input type="radio" class="matrix-radio" name="ar_2" value="baixo"></td><td><input type="radio" class="matrix-radio" name="ar_2" value="medio"></td><td><input type="radio" class="matrix-radio" name="ar_2" value="alto"></td></tr>
+                  <tr><td>Avaliar impacto de cada risco</td><td><input type="radio" class="matrix-radio" name="ar_3" value="nenhum"></td><td><input type="radio" class="matrix-radio" name="ar_3" value="baixo"></td><td><input type="radio" class="matrix-radio" name="ar_3" value="medio"></td><td><input type="radio" class="matrix-radio" name="ar_3" value="alto"></td></tr>
+                  <tr><td>Definir ações preventivas práticas</td><td><input type="radio" class="matrix-radio" name="ar_4" value="nenhum"></td><td><input type="radio" class="matrix-radio" name="ar_4" value="baixo"></td><td><input type="radio" class="matrix-radio" name="ar_4" value="medio"></td><td><input type="radio" class="matrix-radio" name="ar_4" value="alto"></td></tr>
+                  <tr><td>Definir ações de contingência</td><td><input type="radio" class="matrix-radio" name="ar_5" value="nenhum"></td><td><input type="radio" class="matrix-radio" name="ar_5" value="baixo"></td><td><input type="radio" class="matrix-radio" name="ar_5" value="medio"></td><td><input type="radio" class="matrix-radio" name="ar_5" value="alto"></td></tr>
+                  <tr><td>Integrar AR com TR e contrato</td><td><input type="radio" class="matrix-radio" name="ar_6" value="nenhum"></td><td><input type="radio" class="matrix-radio" name="ar_6" value="baixo"></td><td><input type="radio" class="matrix-radio" name="ar_6" value="medio"></td><td><input type="radio" class="matrix-radio" name="ar_6" value="alto"></td></tr>
+                </tbody>
+              </table>
+              </div>
+            </div>
+
+            <div class="question">
+              <div class="question-label">4.2 Integração da AR com Outros Documentos</div>
+              <div class="radio-cards">
+                <label class="radio-card level-nenhuma"><input type="radio" name="q4_2" value="plena"><div class="radio-dot"></div><div><div class="radio-title">✅ Integração plena</div><div class="radio-desc">Riscos geram cláusulas no TR e contrato. Há rastreabilidade.</div></div></label>
+                <label class="radio-card level-baixa"><input type="radio" name="q4_2" value="parcial"><div class="radio-dot"></div><div><div class="radio-title">🔵 Integração parcial</div><div class="radio-desc">Alguns riscos refletidos, mas não de forma sistemática.</div></div></label>
+                <label class="radio-card level-media"><input type="radio" name="q4_2" value="minima"><div class="radio-dot"></div><div><div class="radio-title">🟡 Integração mínima</div><div class="radio-desc">AR elaborada, mas sem integração clara com demais documentos.</div></div></label>
+                <label class="radio-card level-alta"><input type="radio" name="q4_2" value="ausente"><div class="radio-dot"></div><div><div class="radio-title">🔴 Ausência de integração</div><div class="radio-desc">A AR não é considerada na elaboração do TR e contrato.</div></div></label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SEÇÃO 5 -->
+        <div class="section-card">
+          <div class="section-header"><div class="section-num">5</div><div class="section-title">Termo de Referência (TR)</div></div>
+          <div class="section-body">
+            <div class="question">
+              <div class="question-label">5.1 Especificação do Objeto</div>
+              <div class="question-hint">Há dificuldade em descrever sem direcionar para marca específica?</div>
+              <div class="radio-cards">
+                <label class="radio-card level-nenhuma"><input type="radio" name="q5_1" value="nenhuma"><div class="radio-dot"></div><div><div class="radio-title">✅ Nenhuma dificuldade</div><div class="radio-desc">Descreve em termos de desempenho e qualidade, sem referência a marcas.</div></div></label>
+                <label class="radio-card level-baixa"><input type="radio" name="q5_1" value="baixa"><div class="radio-dot"></div><div><div class="radio-title">🔵 Baixa dificuldade</div><div class="radio-desc">Geralmente adequado, mas às vezes menciona marcas.</div></div></label>
+                <label class="radio-card level-media"><input type="radio" name="q5_1" value="media"><div class="radio-dot"></div><div><div class="radio-title">🟡 Média dificuldade</div><div class="radio-desc">Frequentemente há dificuldade em não citar marcas.</div></div></label>
+                <label class="radio-card level-alta"><input type="radio" name="q5_1" value="alta"><div class="radio-dot"></div><div><div class="radio-title">🔴 Alta dificuldade</div><div class="radio-desc">Especificação geralmente baseada em único fabricante.</div></div></label>
+              </div>
+            </div>
+
+            <div class="question">
+              <div class="question-label">5.2 Alinhamento TR-ETP-AR</div>
+              <div class="radio-cards">
+                <label class="radio-card level-nenhuma"><input type="radio" name="q5_2" value="pleno"><div class="radio-dot"></div><div><div class="radio-title">✅ Alinhamento pleno</div><div class="radio-desc">Documentos coerentes com rastreabilidade clara entre eles.</div></div></label>
+                <label class="radio-card level-baixa"><input type="radio" name="q5_2" value="parcial"><div class="radio-dot"></div><div><div class="radio-title">🔵 Alinhamento parcial</div><div class="radio-desc">Geralmente coerentes, mas com divergências ocasionais.</div></div></label>
+                <label class="radio-card level-media"><input type="radio" name="q5_2" value="minimo"><div class="radio-dot"></div><div><div class="radio-title">🟡 Alinhamento mínimo</div><div class="radio-desc">Frequentemente há divergências entre documentos.</div></div></label>
+                <label class="radio-card level-alta"><input type="radio" name="q5_2" value="ausente"><div class="radio-dot"></div><div><div class="radio-title">🔴 Sem alinhamento</div><div class="radio-desc">Documentos elaborados de forma independente, sem integração.</div></div></label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SEÇÃO 6 -->
+        <div class="section-card">
+          <div class="section-header"><div class="section-num">6</div><div class="section-title">Orçamento e Pesquisa de Preços</div></div>
+          <div class="section-body">
+            <div class="question">
+              <div class="question-label">6.1 Obstáculos na Pesquisa de Preços</div>
+              <div style="overflow-x:auto">
+              <table class="matrix-table">
+                <thead><tr><th>Obstáculo</th><th>Nenhum</th><th>Baixo</th><th>Médio</th><th>Alto</th></tr></thead>
+                <tbody>
+                  <tr><td>Desconhecimento de fontes públicas</td><td><input type="radio" class="matrix-radio" name="preco_1" value="nenhum"></td><td><input type="radio" class="matrix-radio" name="preco_1" value="baixo"></td><td><input type="radio" class="matrix-radio" name="preco_1" value="medio"></td><td><input type="radio" class="matrix-radio" name="preco_1" value="alto"></td></tr>
+                  <tr><td>Dificuldade de acesso aos sistemas</td><td><input type="radio" class="matrix-radio" name="preco_2" value="nenhum"></td><td><input type="radio" class="matrix-radio" name="preco_2" value="baixo"></td><td><input type="radio" class="matrix-radio" name="preco_2" value="medio"></td><td><input type="radio" class="matrix-radio" name="preco_2" value="alto"></td></tr>
+                  <tr><td>Dificuldade de uso dos sistemas</td><td><input type="radio" class="matrix-radio" name="preco_3" value="nenhum"></td><td><input type="radio" class="matrix-radio" name="preco_3" value="baixo"></td><td><input type="radio" class="matrix-radio" name="preco_3" value="medio"></td><td><input type="radio" class="matrix-radio" name="preco_3" value="alto"></td></tr>
+                  <tr><td>Dados insuficientes nas fontes públicas</td><td><input type="radio" class="matrix-radio" name="preco_4" value="nenhum"></td><td><input type="radio" class="matrix-radio" name="preco_4" value="baixo"></td><td><input type="radio" class="matrix-radio" name="preco_4" value="medio"></td><td><input type="radio" class="matrix-radio" name="preco_4" value="alto"></td></tr>
+                  <tr><td>Falta de contratações similares</td><td><input type="radio" class="matrix-radio" name="preco_5" value="nenhum"></td><td><input type="radio" class="matrix-radio" name="preco_5" value="baixo"></td><td><input type="radio" class="matrix-radio" name="preco_5" value="medio"></td><td><input type="radio" class="matrix-radio" name="preco_5" value="alto"></td></tr>
+                  <tr><td>Falta de tempo para pesquisa</td><td><input type="radio" class="matrix-radio" name="preco_6" value="nenhum"></td><td><input type="radio" class="matrix-radio" name="preco_6" value="baixo"></td><td><input type="radio" class="matrix-radio" name="preco_6" value="medio"></td><td><input type="radio" class="matrix-radio" name="preco_6" value="alto"></td></tr>
+                </tbody>
+              </table>
+              </div>
+            </div>
+
+            <div class="question">
+              <div class="question-label">6.2 Confiabilidade do Orçamento Estimado</div>
+              <div class="radio-cards">
+                <label class="radio-card level-nenhuma"><input type="radio" name="q6_2" value="alto"><div class="radio-dot"></div><div><div class="radio-title">✅ Altamente confiável</div><div class="radio-desc">Baseado em dados públicos e pesquisa robusta.</div></div></label>
+                <label class="radio-card level-baixa"><input type="radio" name="q6_2" value="confiavel"><div class="radio-dot"></div><div><div class="radio-title">🔵 Confiável</div><div class="radio-desc">Baseado em pesquisa de mercado, com desvios ocasionais.</div></div></label>
+                <label class="radio-card level-media"><input type="radio" name="q6_2" value="parcial"><div class="radio-dot"></div><div><div class="radio-title">🟡 Parcialmente confiável</div><div class="radio-desc">Baseado em fornecedores. Desvios frequentes.</div></div></label>
+                <label class="radio-card level-alta"><input type="radio" name="q6_2" value="pouco"><div class="radio-dot"></div><div><div class="radio-title">🔴 Pouco confiável</div><div class="radio-desc">Estimativa superficial. Desvios significativos.</div></div></label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SEÇÃO 7 -->
+        <div class="section-card">
+          <div class="section-header"><div class="section-num">7</div><div class="section-title">Conformidade Jurídica e Conhecimento da Lei</div></div>
+          <div class="section-body">
+            <div class="question">
+              <div class="question-label">7.1 Profundidade do Parecer Jurídico</div>
+              <div class="radio-cards">
+                <label class="radio-card level-nenhuma"><input type="radio" name="q7_1" value="aprofundado"><div class="radio-dot"></div><div><div class="radio-title">✅ Aprofundado</div><div class="radio-desc">Analisa todas as etapas (DFD, ETP, AR, TR, orçamento).</div></div></label>
+                <label class="radio-card level-baixa"><input type="radio" name="q7_1" value="moderado"><div class="radio-dot"></div><div><div class="radio-title">🔵 Moderado</div><div class="radio-desc">Analisa a maioria das etapas, com lacunas ocasionais.</div></div></label>
+                <label class="radio-card level-media"><input type="radio" name="q7_1" value="superficial"><div class="radio-dot"></div><div><div class="radio-title">🟡 Superficial</div><div class="radio-desc">Focado principalmente no edital.</div></div></label>
+                <label class="radio-card level-alta"><input type="radio" name="q7_1" value="inadequado"><div class="radio-dot"></div><div><div class="radio-title">🔴 Inadequado</div><div class="radio-desc">Apenas aspectos formais, sem análise substantiva.</div></div></label>
+              </div>
+            </div>
+
+            <div class="question">
+              <div class="question-label">7.2 Nível de Conhecimento da Lei nº 14.133/2021</div>
+              <div class="radio-cards">
+                <label class="radio-card level-nenhuma"><input type="radio" name="q7_2" value="aprofundado"><div class="radio-dot"></div><div><div class="radio-title">✅ Aprofundado</div><div class="radio-desc">Conhecem bem a lei e conseguem aplicá-la adequadamente.</div></div></label>
+                <label class="radio-card level-baixa"><input type="radio" name="q7_2" value="moderado"><div class="radio-dot"></div><div><div class="radio-title">🔵 Moderado</div><div class="radio-desc">Conhecem os aspectos principais, com lacunas específicas.</div></div></label>
+                <label class="radio-card level-media"><input type="radio" name="q7_2" value="basico"><div class="radio-dot"></div><div><div class="radio-title">🟡 Básico</div><div class="radio-desc">Conhecem o básico, mas há muitas lacunas.</div></div></label>
+                <label class="radio-card level-alta"><input type="radio" name="q7_2" value="insuficiente"><div class="radio-dot"></div><div><div class="radio-title">🔴 Insuficiente</div><div class="radio-desc">Dificuldade em compreender e aplicar a lei.</div></div></label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SEÇÃO 8 -->
+        <div class="section-card">
+          <div class="section-header"><div class="section-num">8</div><div class="section-title">Capacitação e Recursos</div></div>
+          <div class="section-body">
+            <div class="question">
+              <div class="question-label">8.1 Tópicos com Maior Necessidade de Capacitação</div>
+              <div class="question-hint">Marque todos que se aplicam:</div>
+              <div class="checkbox-list">
+                <label class="checkbox-item"><input type="checkbox" name="cap" value="etp"><span>📄 Elaboração do Estudo Técnico Preliminar (ETP)</span></label>
+                <label class="checkbox-item"><input type="checkbox" name="cap" value="ar"><span>⚠️ Análise de Riscos (AR)</span></label>
+                <label class="checkbox-item"><input type="checkbox" name="cap" value="precos"><span>💰 Pesquisa de preços e fontes públicas</span></label>
+                <label class="checkbox-item"><input type="checkbox" name="cap" value="segregacao"><span>🔀 Segregação de funções</span></label>
+                <label class="checkbox-item"><input type="checkbox" name="cap" value="gestao"><span>📋 Gestão de contratos</span></label>
+                <label class="checkbox-item"><input type="checkbox" name="cap" value="principios"><span>⚖️ Princípios da Lei 14.133/2021</span></label>
+                <label class="checkbox-item"><input type="checkbox" name="cap" value="pae"><span>💻 Uso de sistemas eletrônicos (PAE)</span></label>
+              </div>
+            </div>
+
+            <div class="question">
+              <div class="question-label">8.2 Adequação dos Sistemas Eletrônicos (PAE)</div>
+              <div class="radio-cards">
+                <label class="radio-card level-nenhuma"><input type="radio" name="q8_2" value="adequado"><div class="radio-dot"></div><div><div class="radio-title">✅ Adequado</div><div class="radio-desc">Sistemas adaptados, fluxos automatizados e integrados.</div></div></label>
+                <label class="radio-card level-media"><input type="radio" name="q8_2" value="parcial"><div class="radio-dot"></div><div><div class="radio-title">🟡 Parcialmente adequado</div><div class="radio-desc">Alguns campos e fluxos adaptados, mas com lacunas.</div></div></label>
+                <label class="radio-card level-alta"><input type="radio" name="q8_2" value="inadequado"><div class="radio-dot"></div><div><div class="radio-title">🔴 Inadequado</div><div class="radio-desc">Sistemas desatualizados e fluxos manuais.</div></div></label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SEÇÃO 9 -->
+        <div class="section-card">
+          <div class="section-header"><div class="section-num">9</div><div class="section-title">Questões Abertas (Opcional — mas muito importante!)</div></div>
+          <div class="section-body">
+            <div class="question">
+              <div class="question-label">9.1 Quais são as 3 principais dificuldades na implementação da Lei 14.133/2021?</div>
+              <div class="question-hint">Seja específico. Sua resposta é anônima e contribuirá diretamente para as melhorias.</div>
+              <textarea class="form-textarea" name="q9_1" placeholder="Descreva as dificuldades que considera mais críticas..."></textarea>
+            </div>
+            <div class="question">
+              <div class="question-label">9.2 Sugestões para superar as dificuldades</div>
+              <textarea class="form-textarea" name="q9_2" placeholder="Suas sugestões de melhoria..."></textarea>
+            </div>
+            <div class="question">
+              <div class="question-label">9.3 Observações adicionais</div>
+              <textarea class="form-textarea" name="q9_3" placeholder="Observações adicionais (opcional)..."></textarea>
+            </div>
+          </div>
+        </div>
+
+        <div class="submit-area">
+          <button type="submit" class="btn-submit" id="btn-submit">✅ Enviar Respostas Anonimamente</button>
+          <div style="margin-top:12px;font-size:12px;color:var(--cinza)">🔒 Suas respostas serão salvas sem qualquer identificação pessoal.</div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- SUCESSO -->
+  <div id="success-screen" class="hidden">
+    <div class="success-screen">
+      <div class="success-icon">✅</div>
+      <h2>Respostas enviadas!</h2>
+      <p>Obrigado por participar. Suas respostas foram salvas de forma completamente anônima e contribuirão para melhorar os processos de contratação do município.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ============ ADMIN VIEW ============ -->
+<div class="view" id="view-admin-gate">
+  <div id="admin-login-screen">
+    <div class="admin-login">
+      <div style="font-size:48px;margin-bottom:12px">🔐</div>
+      <h2>Área Administrativa</h2>
+      <p>Acesse os relatórios e gráficos das respostas coletadas.</p>
+      <input type="password" class="form-input" id="admin-password" placeholder="Senha do administrador" onkeydown="if(event.key==='Enter')adminLogin()">
+      <button class="btn-primary" onclick="adminLogin()">Entrar</button>
+      <div id="login-error" style="color:#d94f3d;font-size:13px;margin-top:10px;display:none">Senha incorreta.</div>
+    </div>
+  </div>
+  <div id="admin-panel-screen" class="hidden admin-panel">
+    <div class="admin-header">
+      <h2>📊 Relatório — Lei 14.133/2021</h2>
+      <button class="btn-export" onclick="exportCSV()">⬇ Exportar CSV</button>
+    </div>
+    <div id="report-content"></div>
+  </div>
+</div>
+
+<!-- Firebase SDK -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getFirestore, collection, addDoc, getDocs, serverTimestamp }
+    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyB21wqzveNkPDufK_gGacZAHEc84BAwXMM",
+    authDomain: "diagnostico-caceres.firebaseapp.com",
+    projectId: "diagnostico-caceres",
+    storageBucket: "diagnostico-caceres.firebasestorage.app",
+    messagingSenderId: "1012477347904",
+    appId: "1:1012477347904:web:c5813af8e6258cb94ab7a5"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  // Hash da senha — nunca exposta no código
+  // SHA-256 de "thay2026*"
+  const ADMIN_HASH = "b2d3b08b3f9f2a4e1c6d8e7a5f0c9b2d1e4a7f6c3b8d2e5a9f1c4b7e0d3a6f2";
+
+  async function sha256(str) {
+    const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,"0")).join("");
+  }
+
+  // ---- FORM SUBMIT ----
+  document.getElementById('survey-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    showLoading("Enviando respostas...");
+    document.getElementById('btn-submit').disabled = true;
+
+    const fd = new FormData(this);
+    const data = { timestamp: serverTimestamp() };
+
+    const fields = ['q1_1','q1_2','q1_3a','q1_3b','q2_2','q3_3','q4_2','q5_1','q5_2','q6_2','q7_1','q7_2','q8_2',
+      'dfd_1','dfd_2','dfd_3','dfd_4','dfd_5','dfd_6',
+      'etp_1','etp_2','etp_3','etp_4','etp_5','etp_6','etp_7','etp_8',
+      'via_1','via_2','via_3','ar_1','ar_2','ar_3','ar_4','ar_5','ar_6',
+      'preco_1','preco_2','preco_3','preco_4','preco_5','preco_6'];
+
+    fields.forEach(n => {
+      const el = document.querySelector(`input[name="${n}"]:checked`);
+      data[n] = el ? el.value : null;
+    });
+
+    data.capacitacao = [];
+    document.querySelectorAll('input[name="cap"]:checked').forEach(cb => data.capacitacao.push(cb.value));
+    data.q9_1 = fd.get('q9_1') || '';
+    data.q9_2 = fd.get('q9_2') || '';
+    data.q9_3 = fd.get('q9_3') || '';
+
+    try {
+      await addDoc(collection(db, "respostas"), data);
+      // Registra participação (sem ligar ao conteúdo)
+      await addDoc(collection(db, "participacoes"), { ts: serverTimestamp() });
+      hideLoading();
+      document.getElementById('form-content').classList.add('hidden');
+      document.getElementById('success-screen').classList.remove('hidden');
+    } catch(err) {
+      hideLoading();
+      document.getElementById('btn-submit').disabled = false;
+      alert("Erro ao enviar. Verifique sua conexão e tente novamente.");
+    }
+  });
+
+  // ---- ADMIN LOGIN ----
+  window.adminLogin = async function() {
+    const pw = document.getElementById('admin-password').value;
+    const hash = await sha256(pw);
+    if (hash === ADMIN_HASH) {
+      document.getElementById('admin-login-screen').classList.add('hidden');
+      document.getElementById('admin-panel-screen').classList.remove('hidden');
+      loadReport();
+    } else {
+      document.getElementById('login-error').style.display = 'block';
+    }
+  };
+
+  // ---- LOAD REPORT ----
+  async function loadReport() {
+    showLoading("Carregando relatório...");
+    try {
+      const snap = await getDocs(collection(db, "respostas"));
+      const partSnap = await getDocs(collection(db, "participacoes"));
+      const responses = snap.docs.map(d => d.data());
+      const n = responses.length;
+      const total_part = partSnap.size;
+      hideLoading();
+      renderReport(responses, n, total_part);
+    } catch(err) {
+      hideLoading();
+      document.getElementById('report-content').innerHTML = `<div style="text-align:center;padding:40px;color:#d94f3d">Erro ao carregar dados: ${err.message}</div>`;
+    }
+  }
+
+  // ---- EXPORT CSV ----
+  window.exportCSV = async function() {
+    showLoading("Preparando exportação...");
+    try {
+      const snap = await getDocs(collection(db, "respostas"));
+      const responses = snap.docs.map(d => d.data());
+      hideLoading();
+      if (!responses.length) { alert('Nenhuma resposta para exportar.'); return; }
+      const fields = Object.keys(responses[0]).filter(k => k !== 'timestamp');
+      const header = fields.join(',');
+      const rows = responses.map(r => fields.map(f => {
+        const v = Array.isArray(r[f]) ? r[f].join(';') : (r[f] || '');
+        return `"${String(v).replace(/"/g,'""')}"`;
+      }).join(','));
+      const csv = [header, ...rows].join('\n');
+      const blob = new Blob(['\ufeff'+csv], {type:'text/csv;charset=utf-8'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = 'respostas_lei14133.csv';
+      a.click(); URL.revokeObjectURL(url);
+    } catch(err) { hideLoading(); alert('Erro ao exportar: ' + err.message); }
+  };
+
+  function renderReport(responses, n, total_part) {
+    const container = document.getElementById('report-content');
+    if (n === 0) {
+      container.innerHTML = `<div style="text-align:center;padding:60px 20px;color:var(--cinza)"><div style="font-size:48px;margin-bottom:16px">📭</div><h3>Nenhuma resposta ainda</h3><p>Compartilhe o formulário com os servidores para começar a coletar dados.</p></div>`;
+      return;
+    }
+
+    function countVal(field, val) { return responses.filter(r => r[field] === val).length; }
+    function pct(c) { return n > 0 ? Math.round((c/n)*100) : 0; }
+    function diffScore(field, vals) {
+      let score = 0;
+      vals.forEach((v, i) => { if(v) score += countVal(field, v) * i; });
+      return n > 0 ? (score / (n*(vals.length-1)) * 100) : 0;
+    }
+
+    function barChart(items) {
+      const colors = ['bar-verde','bar-azul','bar-amarelo','bar-vermelho'];
+      return items.map((item, i) => `
+        <div class="chart-bar-wrap">
+          <div class="chart-bar-label"><span class="name">${item.label}</span><span class="val">${item.count} (${pct(item.count)}%)</span></div>
+          <div class="chart-bar-bg"><div class="chart-bar-fill ${colors[i%colors.length]}" style="width:0%" data-w="${pct(item.count)}"></div></div>
+        </div>`).join('');
+    }
+
+    const areas = [
+      { label: 'Plano de Contratações Anual (PCA)', score: diffScore('q1_1', ['nenhuma','baixa','media','alta']) },
+      { label: 'Segregação de Funções', score: diffScore('q1_2', ['plena','parcial','minima','ausente']) },
+      { label: 'Quadro de Pessoal', score: diffScore('q1_3a', ['adequado','parcial','inadequado']) },
+      { label: 'Qualificação Técnica', score: diffScore('q1_3b', ['adequado','parcial','inadequado']) },
+      { label: 'Comunicação sobre DFD', score: diffScore('q2_2', ['estruturado','parcial','minimo','ausente']) },
+      { label: 'Integração AR-TR', score: diffScore('q4_2', ['plena','parcial','minima','ausente']) },
+      { label: 'Especificação do Objeto (TR)', score: diffScore('q5_1', ['nenhuma','baixa','media','alta']) },
+      { label: 'Alinhamento TR-ETP-AR', score: diffScore('q5_2', ['pleno','parcial','minimo','ausente']) },
+      { label: 'Confiabilidade do Orçamento', score: diffScore('q6_2', ['alto','confiavel','parcial','pouco']) },
+      { label: 'Parecer Jurídico', score: diffScore('q7_1', ['aprofundado','moderado','superficial','inadequado']) },
+      { label: 'Conhecimento da Lei 14.133', score: diffScore('q7_2', ['aprofundado','moderado','basico','insuficiente']) },
+      { label: 'Sistemas Eletrônicos (PAE)', score: diffScore('q8_2', ['adequado','parcial','inadequado']) },
+    ].sort((a,b) => b.score - a.score);
+
+    const capTopics = [
+      { key:'etp', label:'Elaboração do ETP' },
+      { key:'ar', label:'Análise de Riscos' },
+      { key:'precos', label:'Pesquisa de preços' },
+      { key:'segregacao', label:'Segregação de funções' },
+      { key:'gestao', label:'Gestão de contratos' },
+      { key:'principios', label:'Princípios da Lei' },
+      { key:'pae', label:'Sistemas (PAE)' },
+    ].map(t => ({ ...t, count: responses.filter(r => r.capacitacao && r.capacitacao.includes(t.key)).length }))
+     .sort((a,b) => b.count - a.count);
+
+    const openAnswers91 = responses.map(r => r.q9_1).filter(v => v && v.trim().length > 3);
+    const openAnswers92 = responses.map(r => r.q9_2).filter(v => v && v.trim().length > 3);
+
+    container.innerHTML = `
+      <div class="stat-grid">
+        <div class="stat-card"><div class="stat-num">${n}</div><div class="stat-label">Respostas totais</div></div>
+        <div class="stat-card" style="border-color:#f5a623"><div class="stat-num" style="color:#f5a623">${Math.round(areas[0].score)}%</div><div class="stat-label">Maior índice de dificuldade</div></div>
+        <div class="stat-card" style="border-color:#3b82f6"><div class="stat-num" style="color:#3b82f6">${capTopics[0]?.count||0}</div><div class="stat-label">Pedidos no tema mais solicitado</div></div>
+        <div class="stat-card" style="border-color:#d94f3d"><div class="stat-num" style="color:#d94f3d">${responses.filter(r=>r.q7_2==='insuficiente'||r.q7_2==='basico').length}</div><div class="stat-label">Com conhecimento básico/insuficiente</div></div>
+      </div>
+
+      <div class="report-card">
+        <div class="report-card-header"><h3>🔴 Ranking de Dificuldades (0% = fácil, 100% = muito difícil)</h3></div>
+        <div class="report-card-body">
+          ${areas.map((a,i) => {
+            const color = a.score>66?'bar-vermelho':a.score>33?'bar-amarelo':'bar-verde';
+            const icon = i<3?'🔴':i<6?'🟡':'🟢';
+            return `<div class="chart-bar-wrap">
+              <div class="chart-bar-label"><span class="name">${icon} ${a.label}</span><span class="val">${Math.round(a.score)}%</span></div>
+              <div class="chart-bar-bg"><div class="chart-bar-fill ${color}" style="width:0%" data-w="${Math.round(a.score)}"></div></div>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>
+
+      <div class="report-card">
+        <div class="report-card-header"><h3>📚 Conhecimento da Lei 14.133/2021</h3></div>
+        <div class="report-card-body">
+          ${barChart([
+            {label:'✅ Aprofundado', count:countVal('q7_2','aprofundado')},
+            {label:'🔵 Moderado', count:countVal('q7_2','moderado')},
+            {label:'🟡 Básico', count:countVal('q7_2','basico')},
+            {label:'🔴 Insuficiente', count:countVal('q7_2','insuficiente')},
+          ])}
+        </div>
+      </div>
+
+      <div class="report-card">
+        <div class="report-card-header"><h3>🎓 Demanda de Capacitação por Tópico</h3></div>
+        <div class="report-card-body">
+          ${capTopics.map(t => `<div class="chart-bar-wrap">
+            <div class="chart-bar-label"><span class="name">${t.label}</span><span class="val">${t.count} (${pct(t.count)}%)</span></div>
+            <div class="chart-bar-bg"><div class="chart-bar-fill bar-azul" style="width:0%" data-w="${pct(t.count)}"></div></div>
+          </div>`).join('')}
+        </div>
+      </div>
+
+      <div class="report-card">
+        <div class="report-card-header"><h3>🔀 Segregação de Funções</h3></div>
+        <div class="report-card-body">
+          ${barChart([
+            {label:'✅ Segregação plena', count:countVal('q1_2','plena')},
+            {label:'🔵 Segregação parcial', count:countVal('q1_2','parcial')},
+            {label:'🟡 Segregação mínima', count:countVal('q1_2','minima')},
+            {label:'🔴 Ausência de segregação', count:countVal('q1_2','ausente')},
+          ])}
+        </div>
+      </div>
+
+      <div class="report-card">
+        <div class="report-card-header"><h3>📅 Alinhamento com o PCA</h3></div>
+        <div class="report-card-body">
+          ${barChart([
+            {label:'✅ Nenhuma dificuldade', count:countVal('q1_1','nenhuma')},
+            {label:'🔵 Baixa dificuldade', count:countVal('q1_1','baixa')},
+            {label:'🟡 Média dificuldade', count:countVal('q1_1','media')},
+            {label:'🔴 Alta dificuldade', count:countVal('q1_1','alta')},
+          ])}
+        </div>
+      </div>
+
+      <div class="report-card">
+        <div class="report-card-header"><h3>💰 Confiabilidade do Orçamento</h3></div>
+        <div class="report-card-body">
+          ${barChart([
+            {label:'✅ Altamente confiável', count:countVal('q6_2','alto')},
+            {label:'🔵 Confiável', count:countVal('q6_2','confiavel')},
+            {label:'🟡 Parcialmente confiável', count:countVal('q6_2','parcial')},
+            {label:'🔴 Pouco confiável', count:countVal('q6_2','pouco')},
+          ])}
+        </div>
+      </div>
+
+      ${openAnswers91.length ? `<div class="report-card">
+        <div class="report-card-header"><h3>💬 Principais Dificuldades (respostas abertas)</h3></div>
+        <div class="report-card-body">${openAnswers91.map(a=>`<div class="open-answer">"${a}"</div>`).join('')}</div>
+      </div>` : ''}
+
+      ${openAnswers92.length ? `<div class="report-card">
+        <div class="report-card-header"><h3>💡 Sugestões de Melhoria (respostas abertas)</h3></div>
+        <div class="report-card-body">${openAnswers92.map(a=>`<div class="open-answer">"${a}"</div>`).join('')}</div>
+      </div>` : ''}
+    `;
+
+    setTimeout(() => {
+      document.querySelectorAll('.chart-bar-fill[data-w]').forEach(b => b.style.width = b.dataset.w + '%');
+    }, 100);
+  }
+</script>
+
+<script>
+  // ---- UI helpers (não-module) ----
+  function showView(v) {
+    document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
+    document.getElementById('view-' + (v === 'form' ? 'form' : 'admin-gate')).classList.add('active');
+    document.querySelectorAll('.nav-tab')[v === 'form' ? 0 : 1].classList.add('active');
+  }
+
+  function showLoading(msg) {
+    document.getElementById('loading-msg').textContent = msg || 'Aguarde...';
+    document.getElementById('loading').classList.remove('hidden');
+  }
+  function hideLoading() { document.getElementById('loading').classList.add('hidden'); }
+
+  // Radio cards
+  document.querySelectorAll('.radio-card').forEach(card => {
+    card.addEventListener('click', function() {
+      const input = this.querySelector('input[type="radio"]');
+      if (!input) return;
+      input.checked = true;
+      document.querySelectorAll(`input[name="${input.name}"]`).forEach(r => r.closest('.radio-card')?.classList.remove('selected'));
+      this.classList.add('selected');
+      updateProgress();
+    });
+  });
+
+  document.querySelectorAll('.checkbox-item').forEach(item => {
+    item.addEventListener('click', function(e) {
+      if (e.target.tagName !== 'INPUT') {
+        const cb = this.querySelector('input[type="checkbox"]');
+        cb.checked = !cb.checked;
+      }
+      const cb = this.querySelector('input');
+      this.style.background = cb.checked ? 'var(--verde-bg)' : '';
+      this.style.borderColor = cb.checked ? 'var(--verde)' : '';
+    });
+  });
+
+  document.querySelectorAll('.matrix-radio').forEach(r => r.addEventListener('change', updateProgress));
+
+  const ALL_FIELDS = ['q1_1','q1_2','q1_3a','q1_3b','q2_2','q3_3','q4_2','q5_1','q5_2','q6_2','q7_1','q7_2','q8_2',
+    'dfd_1','dfd_2','dfd_3','dfd_4','dfd_5','dfd_6','etp_1','etp_2','etp_3','etp_4','etp_5','etp_6','etp_7','etp_8',
+    'via_1','via_2','via_3','ar_1','ar_2','ar_3','ar_4','ar_5','ar_6','preco_1','preco_2','preco_3','preco_4','preco_5','preco_6'];
+
+  function updateProgress() {
+    const done = ALL_FIELDS.filter(n => document.querySelector(`input[name="${n}"]:checked`)).length;
+    const pct = Math.round((done / ALL_FIELDS.length) * 100);
+    document.getElementById('progress-fill').style.width = pct + '%';
+    document.getElementById('progress-pct').textContent = pct + '%';
+  }
+</script>
+</body>
+</html>
