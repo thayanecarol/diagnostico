@@ -703,208 +703,416 @@
     }
   };
 
-  // ---- EXPORT CSV ----
+  // ---- EXPORT CSV FORMATADO ----
   window.exportCSV = async function() {
     showLoading("Preparando exportação...");
     try {
-      const snap = await getDocs(collection(db, "respostas"));
-      const responses = snap.docs.map(d => d.data());
+      const rSnap = await getDocs(collection(db, "respostas"));
+      const pSnap = await getDocs(collection(db, "participantes"));
+      const responses = rSnap.docs.map(d => d.data());
+      const parts = pSnap.docs.map(d => d.data());
       hideLoading();
-      if (!responses.length) { alert('Nenhuma resposta para exportar.'); return; }
-      const fields = Object.keys(responses[0]).filter(k => k !== 'timestamp');
-      const header = fields.join(',');
-      const rows = responses.map(r => fields.map(f => {
-        const v = Array.isArray(r[f]) ? r[f].join(';') : (r[f] || '');
-        return `"${String(v).replace(/"/g,'""')}"`;
-      }).join(','));
-      const csv = [header, ...rows].join('\n');
-      const blob = new Blob(['\ufeff'+csv], {type:'text/csv;charset=utf-8'});
+      if (!responses.length && !parts.length) { alert('Nenhum dado para exportar.'); return; }
+
+      // Mapeamentos legíveis
+      const MAP = {
+        q1_1: { nenhuma:'Nenhuma dificuldade', baixa:'Baixa dificuldade', media:'Média dificuldade', alta:'Alta dificuldade' },
+        q1_2: { plena:'Segregação plena', parcial:'Segregação parcial', minima:'Segregação mínima', ausente:'Ausência de segregação' },
+        q1_3a: { adequado:'Adequado', parcial:'Parcialmente adequado', inadequado:'Inadequado' },
+        q1_3b: { adequado:'Adequada', parcial:'Parcialmente adequada', inadequado:'Inadequada' },
+        q2_2: { estruturado:'Processo estruturado', parcial:'Parcialmente estruturado', minimo:'Processo mínimo', ausente:'Processo ausente' },
+        q3_3: { menos5:'Menos de 5 dias', '5a10':'5 a 10 dias', '10a20':'10 a 20 dias', mais20:'Mais de 20 dias' },
+        q4_2: { plena:'Integração plena', parcial:'Integração parcial', minima:'Integração mínima', ausente:'Ausência de integração' },
+        q5_1: { nenhuma:'Nenhuma dificuldade', baixa:'Baixa dificuldade', media:'Média dificuldade', alta:'Alta dificuldade' },
+        q5_2: { pleno:'Alinhamento pleno', parcial:'Alinhamento parcial', minimo:'Alinhamento mínimo', ausente:'Sem alinhamento' },
+        q6_2: { alto:'Altamente confiável', confiavel:'Confiável', parcial:'Parcialmente confiável', pouco:'Pouco confiável' },
+        q7_1: { aprofundado:'Aprofundado', moderado:'Moderado', superficial:'Superficial', inadequado:'Inadequado' },
+        q7_2: { aprofundado:'Conhecimento aprofundado', moderado:'Conhecimento moderado', basico:'Conhecimento básico', insuficiente:'Conhecimento insuficiente' },
+        q8_2: { adequado:'Adequado', parcial:'Parcialmente adequado', inadequado:'Inadequado' },
+      };
+      const MATRIX_MAP = { nenhuma:'Nenhuma', baixa:'Baixa', media:'Média', alta:'Alta', nenhum:'Nenhum', baixo:'Baixo', medio:'Médio', alto:'Alto', sempre:'Sempre', freq:'Frequentemente', ocas:'Ocasionalmente', rar:'Raramente', aprofundada:'Aprofundada', superficial:'Superficial', ausente:'Ausente' };
+
+      function csv(rows) {
+        return rows.map(r => r.map(c => `"${String(c||'').replace(/"/g,'""')}"`).join(',')).join('\n');
+      }
+
+      // ABA 1 — Respostas
+      const headers1 = [
+        'Nº','Plano Contratações (PCA)','Segregação de Funções','Nº de Servidores','Qualificação Técnica',
+        'DFD - Descrição vaga','DFD - Sem justificativa','DFD - Prazos irreais','DFD - Sem periodicidade','DFD - Fora do PCA','DFD - Sem assinatura',
+        'Comunicação sobre DFD','ETP - Descrição necessidade','ETP - Levantamento mercado','ETP - Comparação soluções',
+        'ETP - Estimativa qtd','ETP - Estimativa custos','ETP - Justificativa técnica','ETP - Contratações correlatas','ETP - Viabilidade socioambiental',
+        'Viabilidade Técnica','Viabilidade Socioeconômica','Viabilidade Ambiental','Tempo elaboração ETP',
+        'AR - Identificar riscos','AR - Probabilidade','AR - Impacto','AR - Ações preventivas','AR - Contingência','AR - Integração AR-TR',
+        'Integração AR com documentos','Especificação do Objeto (TR)','Alinhamento TR-ETP-AR',
+        'Preços - Fontes públicas','Preços - Acesso sistemas','Preços - Uso sistemas','Preços - Dados insuficientes','Preços - Sem similares','Preços - Falta tempo',
+        'Confiabilidade Orçamento','Parecer Jurídico','Conhecimento Lei 14.133',
+        'Capacitação - Tópicos solicitados','Sistemas Eletrônicos (PAE)',
+        'Dificuldades (aberta)','Sugestões (aberta)','Observações (aberta)'
+      ];
+
+      const rows1 = responses.map((r, i) => {
+        const m = (field, map) => (map[r[field]] || r[field] || '—');
+        const mx = (field) => MATRIX_MAP[r[field]] || r[field] || '—';
+        const cap = (r.capacitacao || []).map(k => ({etp:'ETP',ar:'Análise de Riscos',precos:'Pesquisa preços',segregacao:'Segregação',gestao:'Gestão contratos',principios:'Princípios da lei',pae:'Sistemas PAE'}[k]||k)).join('; ');
+        return [
+          i+1,
+          m('q1_1', MAP.q1_1), m('q1_2', MAP.q1_2), m('q1_3a', MAP.q1_3a), m('q1_3b', MAP.q1_3b),
+          mx('dfd_1'), mx('dfd_2'), mx('dfd_3'), mx('dfd_4'), mx('dfd_5'), mx('dfd_6'),
+          m('q2_2', MAP.q2_2),
+          mx('etp_1'), mx('etp_2'), mx('etp_3'), mx('etp_4'), mx('etp_5'), mx('etp_6'), mx('etp_7'), mx('etp_8'),
+          mx('via_1'), mx('via_2'), mx('via_3'), m('q3_3', MAP.q3_3),
+          mx('ar_1'), mx('ar_2'), mx('ar_3'), mx('ar_4'), mx('ar_5'), mx('ar_6'),
+          m('q4_2', MAP.q4_2), m('q5_1', MAP.q5_1), m('q5_2', MAP.q5_2),
+          mx('preco_1'), mx('preco_2'), mx('preco_3'), mx('preco_4'), mx('preco_5'), mx('preco_6'),
+          m('q6_2', MAP.q6_2), m('q7_1', MAP.q7_1), m('q7_2', MAP.q7_2),
+          cap || '—', m('q8_2', MAP.q8_2),
+          r.q9_1 || '', r.q9_2 || '', r.q9_3 || ''
+        ];
+      });
+
+      // ABA 2 — Participantes
+      const headers2 = ['Nº','Nome','Setor / Secretaria','E-mail','Data e Hora'];
+      const rows2 = parts.map((p, i) => {
+        const ts = p.ts && p.ts.toDate ? p.ts.toDate().toLocaleString('pt-BR') : '—';
+        return [i+1, p.nome||'—', p.setor||'—', p.email||'—', ts];
+      });
+
+      // Junta tudo num único CSV com separador de seção
+      const fullCsv = '\ufeff' +
+        'RESPOSTAS DO QUESTIONARIO - LEI 14.133/2021 - PREFEITURA DE CACERES\n' +
+        'Data de exportacao: ' + new Date().toLocaleString('pt-BR') + '\n\n' +
+        '=== ABA 1: RESPOSTAS (anonimas) ===\n' +
+        csv([headers1, ...rows1]) +
+        '\n\n=== ABA 2: PARTICIPANTES ===\n' +
+        csv([headers2, ...rows2]);
+
+      const blob = new Blob([fullCsv], {type:'text/csv;charset=utf-8'});
       const url = URL.createObjectURL(blob);
-      const a = document.createElement('a'); a.href = url; a.download = 'respostas_lei14133.csv';
-      a.click(); URL.revokeObjectURL(url);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'diagnostico_lei14133_' + new Date().toISOString().slice(0,10) + '.csv';
+      a.click();
+      URL.revokeObjectURL(url);
     } catch(err) { hideLoading(); alert('Erro ao exportar: ' + err.message); }
   };
 
+  // ---- RENDER REPORT ----
   function renderReport(responses, n, participants) {
     const container = document.getElementById('report-content');
+
     if (n === 0 && participants.length === 0) {
-      container.innerHTML = `<div style="text-align:center;padding:60px 20px;color:var(--cinza)"><div style="font-size:48px;margin-bottom:16px">📭</div><h3>Nenhuma resposta ainda</h3><p>Compartilhe o formulário com os servidores para começar a coletar dados.</p></div>`;
+      container.innerHTML = `<div style="text-align:center;padding:60px 20px;color:var(--cinza)">
+        <div style="font-size:48px;margin-bottom:16px">📭</div>
+        <h3 style="margin-bottom:8px">Nenhuma resposta ainda</h3>
+        <p>Compartilhe o formulário com os servidores para começar a coletar dados.</p>
+      </div>`;
       return;
     }
 
-    function countVal(field, val) { return responses.filter(r => r[field] === val).length; }
-    function pct(c) { return n > 0 ? Math.round((c/n)*100) : 0; }
-    function diffScore(field, vals) {
-      let score = 0;
-      vals.forEach((v, i) => { if(v) score += countVal(field, v) * i; });
-      return n > 0 ? (score / (n*(vals.length-1)) * 100) : 0;
+    function count(field, val) { return responses.filter(r => r[field] === val).length; }
+    function pct(c) { return n > 0 ? Math.round((c / n) * 100) : 0; }
+
+    // Barra de resposta com legenda clara
+    function barra(label, cor, qtd, total) {
+      const p = total > 0 ? Math.round((qtd/total)*100) : 0;
+      const cores = { verde:'#1a7a4a', azul:'#3b82f6', amarelo:'#d97706', vermelho:'#dc2626' };
+      const bgCores = { verde:'#e8f5ee', azul:'#eff6ff', amarelo:'#fffbeb', vermelho:'#fef2f2' };
+      return `<div style="margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+          <span style="font-size:13px;color:#1a1f2e;font-weight:500">${label}</span>
+          <span style="font-size:13px;font-family:'IBM Plex Mono',monospace;color:#6b7280;min-width:110px;text-align:right">
+            <strong style="color:${cores[cor]}">${qtd} pessoa${qtd!==1?'s':''}</strong> &nbsp;(${p}%)
+          </span>
+        </div>
+        <div style="background:#f3f4f6;border-radius:6px;height:14px;overflow:hidden">
+          <div style="height:100%;border-radius:6px;background:${cores[cor]};width:0%;transition:width 0.8s cubic-bezier(.34,1.56,.64,1)" data-w="${p}"></div>
+        </div>
+      </div>`;
     }
 
-    function barChart(items) {
-      const colors = ['bar-verde','bar-azul','bar-amarelo','bar-vermelho'];
-      return items.map((item, i) => `
-        <div class="chart-bar-wrap">
-          <div class="chart-bar-label"><span class="name">${item.label}</span><span class="val">${item.count} (${pct(item.count)}%)</span></div>
-          <div class="chart-bar-bg"><div class="chart-bar-fill ${colors[i%colors.length]}" style="width:0%" data-w="${pct(item.count)}"></div></div>
-        </div>`).join('');
+    // Card de seção
+    function secCard(titulo, conteudo) {
+      return `<div class="report-card" style="margin-bottom:20px">
+        <div class="report-card-header" style="background:linear-gradient(90deg,#1a7a4a,#2da060);color:white;padding:14px 20px;border-radius:0">
+          <h3 style="color:white;font-size:14px">${titulo}</h3>
+        </div>
+        <div class="report-card-body">${conteudo}</div>
+      </div>`;
     }
 
-    const areas = [
-      { label: 'Plano de Contratações Anual (PCA)', score: diffScore('q1_1', ['nenhuma','baixa','media','alta']) },
-      { label: 'Segregação de Funções', score: diffScore('q1_2', ['plena','parcial','minima','ausente']) },
-      { label: 'Quadro de Pessoal', score: diffScore('q1_3a', ['adequado','parcial','inadequado']) },
-      { label: 'Qualificação Técnica', score: diffScore('q1_3b', ['adequado','parcial','inadequado']) },
-      { label: 'Comunicação sobre DFD', score: diffScore('q2_2', ['estruturado','parcial','minimo','ausente']) },
-      { label: 'Integração AR-TR', score: diffScore('q4_2', ['plena','parcial','minima','ausente']) },
-      { label: 'Especificação do Objeto (TR)', score: diffScore('q5_1', ['nenhuma','baixa','media','alta']) },
-      { label: 'Alinhamento TR-ETP-AR', score: diffScore('q5_2', ['pleno','parcial','minimo','ausente']) },
-      { label: 'Confiabilidade do Orçamento', score: diffScore('q6_2', ['alto','confiavel','parcial','pouco']) },
-      { label: 'Parecer Jurídico', score: diffScore('q7_1', ['aprofundado','moderado','superficial','inadequado']) },
-      { label: 'Conhecimento da Lei 14.133', score: diffScore('q7_2', ['aprofundado','moderado','basico','insuficiente']) },
-      { label: 'Sistemas Eletrônicos (PAE)', score: diffScore('q8_2', ['adequado','parcial','inadequado']) },
-    ].sort((a,b) => b.score - a.score);
+    // Bloco de pergunta com todas as opções
+    function perguntaBlock(titulo, opcoes) {
+      const total = opcoes.reduce((s, o) => s + o.qtd, 0);
+      const barras = opcoes.map(o => barra(o.label, o.cor, o.qtd, total)).join('');
+      return `<div style="margin-bottom:24px;padding-bottom:24px;border-bottom:1px solid #f0f0f0">
+        <div style="font-size:13px;font-weight:600;color:#1a1f2e;margin-bottom:12px">${titulo}</div>
+        ${barras}
+      </div>`;
+    }
 
+    // Legenda de cores
+    const legenda = `<div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:28px;padding:14px 18px;background:#f8faff;border-radius:10px;border:1px solid #e0e7ff">
+      <span style="font-size:12px;font-weight:600;color:#374151;width:100%">🔎 Como ler as barras:</span>
+      <span style="font-size:12px;color:#1a7a4a">🟢 Verde = Situação positiva / sem problema</span>
+      <span style="font-size:12px;color:#2563eb">🔵 Azul = Situação com ressalvas leves</span>
+      <span style="font-size:12px;color:#d97706">🟡 Amarelo = Atenção — problema moderado</span>
+      <span style="font-size:12px;color:#dc2626">🔴 Vermelho = Crítico — problema grave</span>
+      <span style="font-size:12px;color:#6b7280;width:100%">Cada barra mostra quantas pessoas escolheram aquela opção. Ex: "8 pessoas (53%)" = 8 de ${n} responderam aquilo.</span>
+    </div>`;
+
+    // Resumo executivo — top 3 problemas críticos
+    const criticos = [];
+    const checks = [
+      { label:'Alta dificuldade no PCA', val: count('q1_1','alta') },
+      { label:'Ausência de segregação de funções', val: count('q1_2','ausente') + count('q1_2','minima') },
+      { label:'Quadro de pessoal inadequado', val: count('q1_3a','inadequado') },
+      { label:'Qualificação técnica inadequada', val: count('q1_3b','inadequado') },
+      { label:'Sem processo para orientar DFD', val: count('q2_2','ausente') + count('q2_2','minimo') },
+      { label:'Sem integração entre AR e documentos', val: count('q4_2','ausente') + count('q4_2','minima') },
+      { label:'Orçamento pouco confiável', val: count('q6_2','pouco') + count('q6_2','parcial') },
+      { label:'Conhecimento insuficiente da Lei', val: count('q7_2','insuficiente') + count('q7_2','basico') },
+      { label:'Parecer jurídico superficial/inadequado', val: count('q7_1','superficial') + count('q7_1','inadequado') },
+      { label:'Sistemas eletrônicos inadequados', val: count('q8_2','inadequado') },
+    ].sort((a,b) => b.val - a.val).slice(0,3);
+
+    const resumoItems = checks.map(c => `
+      <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:#fef2f2;border-radius:8px;border-left:4px solid #dc2626">
+        <span style="font-size:20px">🔴</span>
+        <div>
+          <div style="font-size:13px;font-weight:600;color:#1a1f2e">${c.label}</div>
+          <div style="font-size:12px;color:#6b7280">${c.val} de ${n} pessoa${n!==1?'s':''} indicaram este problema (${pct(c.val)}%)</div>
+        </div>
+      </div>`).join('');
+
+    // Capacitação
     const capTopics = [
-      { key:'etp', label:'Elaboração do ETP' },
-      { key:'ar', label:'Análise de Riscos' },
-      { key:'precos', label:'Pesquisa de preços' },
-      { key:'segregacao', label:'Segregação de funções' },
-      { key:'gestao', label:'Gestão de contratos' },
-      { key:'principios', label:'Princípios da Lei' },
-      { key:'pae', label:'Sistemas (PAE)' },
-    ].map(t => ({ ...t, count: responses.filter(r => r.capacitacao && r.capacitacao.includes(t.key)).length }))
-     .sort((a,b) => b.count - a.count);
+      { key:'etp', label:'📄 Elaboração do ETP' },
+      { key:'ar', label:'⚠️ Análise de Riscos' },
+      { key:'precos', label:'💰 Pesquisa de preços' },
+      { key:'segregacao', label:'🔀 Segregação de funções' },
+      { key:'gestao', label:'📋 Gestão de contratos' },
+      { key:'principios', label:'⚖️ Princípios da Lei' },
+      { key:'pae', label:'💻 Sistemas (PAE)' },
+    ].map(t => ({ ...t, qtd: responses.filter(r => r.capacitacao && r.capacitacao.includes(t.key)).length }))
+     .sort((a,b) => b.qtd - a.qtd);
 
-    const openAnswers91 = responses.map(r => r.q9_1).filter(v => v && v.trim().length > 3);
-    const openAnswers92 = responses.map(r => r.q9_2).filter(v => v && v.trim().length > 3);
+    // Respostas abertas
+    const r91 = responses.map(r => r.q9_1).filter(v => v && v.trim().length > 5);
+    const r92 = responses.map(r => r.q9_2).filter(v => v && v.trim().length > 5);
 
-    container.innerHTML = `
-      <div class="stat-grid">
-        <div class="stat-card"><div class="stat-num">${n}</div><div class="stat-label">Respostas totais</div></div>
-        <div class="stat-card" style="border-color:#f5a623"><div class="stat-num" style="color:#f5a623">${Math.round(areas[0].score)}%</div><div class="stat-label">Maior índice de dificuldade</div></div>
-        <div class="stat-card" style="border-color:#3b82f6"><div class="stat-num" style="color:#3b82f6">${capTopics[0]?.count||0}</div><div class="stat-label">Pedidos no tema mais solicitado</div></div>
-        <div class="stat-card" style="border-color:#d94f3d"><div class="stat-num" style="color:#d94f3d">${responses.filter(r=>r.q7_2==='insuficiente'||r.q7_2==='basico').length}</div><div class="stat-label">Com conhecimento básico/insuficiente</div></div>
-      </div>
-
-      <div class="report-card">
-        <div class="report-card-header"><h3>🔴 Ranking de Dificuldades (0% = fácil, 100% = muito difícil)</h3></div>
-        <div class="report-card-body">
-          ${areas.map((a,i) => {
-            const color = a.score>66?'bar-vermelho':a.score>33?'bar-amarelo':'bar-verde';
-            const icon = i<3?'🔴':i<6?'🟡':'🟢';
-            return `<div class="chart-bar-wrap">
-              <div class="chart-bar-label"><span class="name">${icon} ${a.label}</span><span class="val">${Math.round(a.score)}%</span></div>
-              <div class="chart-bar-bg"><div class="chart-bar-fill ${color}" style="width:0%" data-w="${Math.round(a.score)}"></div></div>
-            </div>`;
-          }).join('')}
-        </div>
-      </div>
-
-      <div class="report-card">
-        <div class="report-card-header"><h3>📚 Conhecimento da Lei 14.133/2021</h3></div>
-        <div class="report-card-body">
-          ${barChart([
-            {label:'✅ Aprofundado', count:countVal('q7_2','aprofundado')},
-            {label:'🔵 Moderado', count:countVal('q7_2','moderado')},
-            {label:'🟡 Básico', count:countVal('q7_2','basico')},
-            {label:'🔴 Insuficiente', count:countVal('q7_2','insuficiente')},
-          ])}
-        </div>
-      </div>
-
-      <div class="report-card">
-        <div class="report-card-header"><h3>🎓 Demanda de Capacitação por Tópico</h3></div>
-        <div class="report-card-body">
-          ${capTopics.map(t => `<div class="chart-bar-wrap">
-            <div class="chart-bar-label"><span class="name">${t.label}</span><span class="val">${t.count} (${pct(t.count)}%)</span></div>
-            <div class="chart-bar-bg"><div class="chart-bar-fill bar-azul" style="width:0%" data-w="${pct(t.count)}"></div></div>
-          </div>`).join('')}
-        </div>
-      </div>
-
-      <div class="report-card">
-        <div class="report-card-header"><h3>🔀 Segregação de Funções</h3></div>
-        <div class="report-card-body">
-          ${barChart([
-            {label:'✅ Segregação plena', count:countVal('q1_2','plena')},
-            {label:'🔵 Segregação parcial', count:countVal('q1_2','parcial')},
-            {label:'🟡 Segregação mínima', count:countVal('q1_2','minima')},
-            {label:'🔴 Ausência de segregação', count:countVal('q1_2','ausente')},
-          ])}
-        </div>
-      </div>
-
-      <div class="report-card">
-        <div class="report-card-header"><h3>📅 Alinhamento com o PCA</h3></div>
-        <div class="report-card-body">
-          ${barChart([
-            {label:'✅ Nenhuma dificuldade', count:countVal('q1_1','nenhuma')},
-            {label:'🔵 Baixa dificuldade', count:countVal('q1_1','baixa')},
-            {label:'🟡 Média dificuldade', count:countVal('q1_1','media')},
-            {label:'🔴 Alta dificuldade', count:countVal('q1_1','alta')},
-          ])}
-        </div>
-      </div>
-
-      <div class="report-card">
-        <div class="report-card-header"><h3>💰 Confiabilidade do Orçamento</h3></div>
-        <div class="report-card-body">
-          ${barChart([
-            {label:'✅ Altamente confiável', count:countVal('q6_2','alto')},
-            {label:'🔵 Confiável', count:countVal('q6_2','confiavel')},
-            {label:'🟡 Parcialmente confiável', count:countVal('q6_2','parcial')},
-            {label:'🔴 Pouco confiável', count:countVal('q6_2','pouco')},
-          ])}
-        </div>
-      </div>
-
-      ${openAnswers91.length ? `<div class="report-card">
-        <div class="report-card-header"><h3>💬 Principais Dificuldades (respostas abertas)</h3></div>
-        <div class="report-card-body">${openAnswers91.map(a=>`<div class="open-answer">"${a}"</div>`).join('')}</div>
-      </div>` : ''}
-
-      ${openAnswers92.length ? `<div class="report-card">
-        <div class="report-card-header"><h3>💡 Sugestões de Melhoria (respostas abertas)</h3></div>
-        <div class="report-card-body">${openAnswers92.map(a=>`<div class="open-answer">"${a}"</div>`).join('')}</div>
-      </div>` : ''}
-    `;
-
-    // Participants table
-    const pRows = participants.map((p, i) => {
+    // Participantes
+    const pRows = participants.map((p,i) => {
       const ts = p.ts && p.ts.toDate ? p.ts.toDate().toLocaleString('pt-BR') : '—';
       return `<tr>
-        <td style="padding:10px 14px;border-bottom:1px solid #f0f0f0;color:#6b7280">${i+1}</td>
-        <td style="padding:10px 14px;border-bottom:1px solid #f0f0f0;font-weight:600">${p.nome || '—'}</td>
-        <td style="padding:10px 14px;border-bottom:1px solid #f0f0f0">${p.setor || '—'}</td>
-        <td style="padding:10px 14px;border-bottom:1px solid #f0f0f0">${p.email || '—'}</td>
+        <td style="padding:10px 14px;border-bottom:1px solid #f0f0f0;color:#6b7280;font-size:12px">${i+1}</td>
+        <td style="padding:10px 14px;border-bottom:1px solid #f0f0f0;font-weight:600">${p.nome||'—'}</td>
+        <td style="padding:10px 14px;border-bottom:1px solid #f0f0f0">${p.setor||'—'}</td>
+        <td style="padding:10px 14px;border-bottom:1px solid #f0f0f0;color:#2563eb">${p.email||'—'}</td>
         <td style="padding:10px 14px;border-bottom:1px solid #f0f0f0;font-size:12px;color:#6b7280">${ts}</td>
       </tr>`;
     }).join('');
 
-    const pTableHtml = participants.length === 0
-      ? '<p style="color:var(--cinza);font-size:13px">Nenhum participante registrado ainda.</p>'
-      : `<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px">
-          <thead><tr>
-            <th style="background:#f3f4f6;padding:10px 14px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;color:#6b7280;border-bottom:2px solid #d1d5db">#</th>
-            <th style="background:#f3f4f6;padding:10px 14px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;color:#6b7280;border-bottom:2px solid #d1d5db">Nome</th>
-            <th style="background:#f3f4f6;padding:10px 14px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;color:#6b7280;border-bottom:2px solid #d1d5db">Setor</th>
-            <th style="background:#f3f4f6;padding:10px 14px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;color:#6b7280;border-bottom:2px solid #d1d5db">E-mail</th>
-            <th style="background:#f3f4f6;padding:10px 14px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;color:#6b7280;border-bottom:2px solid #d1d5db">Data</th>
-          </tr></thead>
-          <tbody>${pRows}</tbody>
-        </table></div>`;
+    container.innerHTML = `
 
-    container.innerHTML += `
-      <div class="report-card">
-        <div class="report-card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
-          <h3>👥 Lista de Participantes (${participants.length})</h3>
-          <span style="font-size:12px;color:var(--cinza)">Separado das respostas — apenas controle de participação</span>
+      <!-- STAT CARDS -->
+      <div class="stat-grid" style="margin-bottom:24px">
+        <div class="stat-card">
+          <div class="stat-num">${n}</div>
+          <div class="stat-label">Questionários respondidos</div>
         </div>
-        <div class="report-card-body">${pTableHtml}</div>
-      </div>`;
+        <div class="stat-card" style="border-color:#3b82f6">
+          <div class="stat-num" style="color:#3b82f6">${participants.length}</div>
+          <div class="stat-label">Participantes identificados</div>
+        </div>
+        <div class="stat-card" style="border-color:#dc2626">
+          <div class="stat-num" style="color:#dc2626">${count('q7_2','insuficiente') + count('q7_2','basico')}</div>
+          <div class="stat-label">Com conhecimento básico ou insuficiente da lei</div>
+        </div>
+        <div class="stat-card" style="border-color:#d97706">
+          <div class="stat-num" style="color:#d97706">${capTopics[0]?.qtd||0}</div>
+          <div class="stat-label">Pedidos de capacitação em "${capTopics[0]?.label?.replace(/^..\s/,'') || '—'}"</div>
+        </div>
+      </div>
+
+      <!-- LEGENDA -->
+      ${legenda}
+
+      <!-- RESUMO EXECUTIVO -->
+      <div class="report-card" style="margin-bottom:20px">
+        <div class="report-card-header" style="background:#fef2f2;border-bottom:2px solid #dc2626">
+          <h3 style="color:#dc2626">🚨 Resumo Executivo — 3 Problemas Mais Críticos</h3>
+          <p style="font-size:12px;color:#6b7280;margin-top:4px">Estes são os pontos com maior número de respostas negativas — prioridade de ação imediata.</p>
+        </div>
+        <div class="report-card-body" style="display:flex;flex-direction:column;gap:10px">
+          ${resumoItems}
+        </div>
+      </div>
+
+      <!-- SEÇÃO 1: PLANEJAMENTO -->
+      ${secCard('SEÇÃO 1 — Planejamento e Governança',
+        perguntaBlock('1.1 Alinhamento das secretarias com o Plano de Contratações Anual (PCA)', [
+          { label:'✅ Nenhuma dificuldade — processo bem estruturado', cor:'verde', qtd: count('q1_1','nenhuma') },
+          { label:'🔵 Baixa dificuldade — falhas ocasionais', cor:'azul', qtd: count('q1_1','baixa') },
+          { label:'🟡 Média dificuldade — processo desorganizado', cor:'amarelo', qtd: count('q1_1','media') },
+          { label:'🔴 Alta dificuldade — sem processo estruturado', cor:'vermelho', qtd: count('q1_1','alta') },
+        ]) +
+        perguntaBlock('1.2 Segregação de Funções (separação de quem faz cada etapa)', [
+          { label:'✅ Segregação plena — cada etapa tem responsável diferente', cor:'verde', qtd: count('q1_2','plena') },
+          { label:'🔵 Segregação parcial — algumas funções acumuladas', cor:'azul', qtd: count('q1_2','parcial') },
+          { label:'🟡 Segregação mínima — mesmo agente faz tudo sem controle', cor:'amarelo', qtd: count('q1_2','minima') },
+          { label:'🔴 Ausência total — um agente responsável por tudo', cor:'vermelho', qtd: count('q1_2','ausente') },
+        ]) +
+        perguntaBlock('1.3 Número de servidores no setor', [
+          { label:'✅ Adequado — suficiente para as demandas', cor:'verde', qtd: count('q1_3a','adequado') },
+          { label:'🟡 Parcialmente adequado — insuficiente em picos', cor:'amarelo', qtd: count('q1_3a','parcial') },
+          { label:'🔴 Inadequado — cronicamente insuficiente', cor:'vermelho', qtd: count('q1_3a','inadequado') },
+        ]) +
+        perguntaBlock('1.4 Qualificação técnica dos servidores', [
+          { label:'✅ Adequada — servidores capacitados', cor:'verde', qtd: count('q1_3b','adequado') },
+          { label:'🟡 Parcialmente adequada — lacunas de conhecimento', cor:'amarelo', qtd: count('q1_3b','parcial') },
+          { label:'🔴 Inadequada — falta qualificação geral', cor:'vermelho', qtd: count('q1_3b','inadequado') },
+        ])
+      )}
+
+      <!-- SEÇÃO 2: DFD -->
+      ${secCard('SEÇÃO 2 — Documento de Formalização da Demanda (DFD)',
+        perguntaBlock('2.1 Comunicação e orientação sobre como preencher o DFD', [
+          { label:'✅ Processo estruturado — modelo, orientações e treinamento', cor:'verde', qtd: count('q2_2','estruturado') },
+          { label:'🔵 Parcialmente estruturado — orientações informais', cor:'azul', qtd: count('q2_2','parcial') },
+          { label:'🟡 Processo mínimo — existe modelo, sem orientação', cor:'amarelo', qtd: count('q2_2','minimo') },
+          { label:'🔴 Processo ausente — sem modelo nem orientações', cor:'vermelho', qtd: count('q2_2','ausente') },
+        ])
+      )}
+
+      <!-- SEÇÃO 3: ETP -->
+      ${secCard('SEÇÃO 3 — Estudo Técnico Preliminar (ETP)',
+        perguntaBlock('3.1 Tempo médio para elaborar um ETP', [
+          { label:'⚡ Menos de 5 dias', cor:'verde', qtd: count('q3_3','menos5') },
+          { label:'📅 5 a 10 dias', cor:'azul', qtd: count('q3_3','5a10') },
+          { label:'📅 10 a 20 dias', cor:'amarelo', qtd: count('q3_3','10a20') },
+          { label:'🐢 Mais de 20 dias', cor:'vermelho', qtd: count('q3_3','mais20') },
+        ])
+      )}
+
+      <!-- SEÇÃO 4: AR -->
+      ${secCard('SEÇÃO 4 — Análise de Riscos (AR)',
+        perguntaBlock('4.1 Integração da Análise de Riscos com TR e contrato', [
+          { label:'✅ Integração plena — riscos viram cláusulas nos documentos', cor:'verde', qtd: count('q4_2','plena') },
+          { label:'🔵 Integração parcial — alguns riscos refletidos', cor:'azul', qtd: count('q4_2','parcial') },
+          { label:'🟡 Integração mínima — AR feita mas sem conexão', cor:'amarelo', qtd: count('q4_2','minima') },
+          { label:'🔴 Sem integração — AR ignorada nos outros documentos', cor:'vermelho', qtd: count('q4_2','ausente') },
+        ])
+      )}
+
+      <!-- SEÇÃO 5: TR -->
+      ${secCard('SEÇÃO 5 — Termo de Referência (TR)',
+        perguntaBlock('5.1 Dificuldade em descrever o objeto sem citar marcas específicas', [
+          { label:'✅ Nenhuma — descreve por desempenho e qualidade', cor:'verde', qtd: count('q5_1','nenhuma') },
+          { label:'🔵 Baixa — às vezes menciona marcas', cor:'azul', qtd: count('q5_1','baixa') },
+          { label:'🟡 Média — frequentemente menciona marcas', cor:'amarelo', qtd: count('q5_1','media') },
+          { label:'🔴 Alta — especificação sempre baseada em um fornecedor', cor:'vermelho', qtd: count('q5_1','alta') },
+        ]) +
+        perguntaBlock('5.2 Alinhamento entre ETP, AR e TR (os documentos conversam entre si?)', [
+          { label:'✅ Alinhamento pleno — documentos coerentes e conectados', cor:'verde', qtd: count('q5_2','pleno') },
+          { label:'🔵 Alinhamento parcial — divergências ocasionais', cor:'azul', qtd: count('q5_2','parcial') },
+          { label:'🟡 Alinhamento mínimo — divergências frequentes', cor:'amarelo', qtd: count('q5_2','minimo') },
+          { label:'🔴 Sem alinhamento — documentos feitos de forma independente', cor:'vermelho', qtd: count('q5_2','ausente') },
+        ])
+      )}
+
+      <!-- SEÇÃO 6: ORÇAMENTO -->
+      ${secCard('SEÇÃO 6 — Orçamento e Pesquisa de Preços',
+        perguntaBlock('6.1 Confiabilidade dos valores estimados no orçamento', [
+          { label:'✅ Altamente confiável — baseado em dados públicos e pesquisa robusta', cor:'verde', qtd: count('q6_2','alto') },
+          { label:'🔵 Confiável — pesquisa de mercado com desvios ocasionais', cor:'azul', qtd: count('q6_2','confiavel') },
+          { label:'🟡 Parcialmente confiável — baseado em fornecedores, desvios frequentes', cor:'amarelo', qtd: count('q6_2','parcial') },
+          { label:'🔴 Pouco confiável — estimativa superficial, desvios significativos', cor:'vermelho', qtd: count('q6_2','pouco') },
+        ])
+      )}
+
+      <!-- SEÇÃO 7: JURÍDICO -->
+      ${secCard('SEÇÃO 7 — Conformidade Jurídica e Conhecimento da Lei',
+        perguntaBlock('7.1 Profundidade do Parecer Jurídico', [
+          { label:'✅ Aprofundado — analisa DFD, ETP, AR, TR e orçamento', cor:'verde', qtd: count('q7_1','aprofundado') },
+          { label:'🔵 Moderado — analisa maioria das etapas', cor:'azul', qtd: count('q7_1','moderado') },
+          { label:'🟡 Superficial — focado no edital', cor:'amarelo', qtd: count('q7_1','superficial') },
+          { label:'🔴 Inadequado — apenas aspectos formais', cor:'vermelho', qtd: count('q7_1','inadequado') },
+        ]) +
+        perguntaBlock('7.2 Nível de conhecimento da Lei nº 14.133/2021', [
+          { label:'✅ Aprofundado — conhecem e aplicam bem a lei', cor:'verde', qtd: count('q7_2','aprofundado') },
+          { label:'🔵 Moderado — conhecem o principal, lacunas pontuais', cor:'azul', qtd: count('q7_2','moderado') },
+          { label:'🟡 Básico — muitas lacunas', cor:'amarelo', qtd: count('q7_2','basico') },
+          { label:'🔴 Insuficiente — dificuldade em compreender e aplicar', cor:'vermelho', qtd: count('q7_2','insuficiente') },
+        ])
+      )}
+
+      <!-- SEÇÃO 8: CAPACITAÇÃO -->
+      ${secCard('SEÇÃO 8 — Capacitação: Tópicos mais solicitados',
+        '<p style="font-size:12px;color:#6b7280;margin-bottom:16px">Quantidade de servidores que marcaram cada tópico como necessitando de mais capacitação:</p>' +
+        capTopics.map(t => barra(t.label, t.qtd >= n*0.5 ? 'vermelho' : t.qtd >= n*0.3 ? 'amarelo' : 'azul', t.qtd, n)).join('') +
+        perguntaBlock('8.2 Adequação dos sistemas eletrônicos (PAE)', [
+          { label:'✅ Adequado — campos, fluxos e integração funcionando', cor:'verde', qtd: count('q8_2','adequado') },
+          { label:'🟡 Parcialmente adequado — lacunas nos sistemas', cor:'amarelo', qtd: count('q8_2','parcial') },
+          { label:'🔴 Inadequado — sistemas desatualizados e manuais', cor:'vermelho', qtd: count('q8_2','inadequado') },
+        ])
+      )}
+
+      <!-- RESPOSTAS ABERTAS -->
+      ${r91.length ? `<div class="report-card" style="margin-bottom:20px">
+        <div class="report-card-header">
+          <h3>💬 Seção 9.1 — Principais Dificuldades (respostas escritas pelos servidores)</h3>
+          <p style="font-size:12px;color:#6b7280;margin-top:4px">${r91.length} servidor${r91.length!==1?'es':''} respondeu${r91.length!==1?'ram':''} esta questão</p>
+        </div>
+        <div class="report-card-body" style="display:flex;flex-direction:column;gap:10px">
+          ${r91.map((a,i) => `<div style="background:#f8faff;border-left:4px solid #3b82f6;padding:14px 16px;border-radius:0 8px 8px 0;font-size:13px;line-height:1.7;color:#1a1f2e">
+            <span style="font-size:10px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px">Resposta ${i+1}</span>
+            "${a}"
+          </div>`).join('')}
+        </div>
+      </div>` : ''}
+
+      ${r92.length ? `<div class="report-card" style="margin-bottom:20px">
+        <div class="report-card-header">
+          <h3>💡 Seção 9.2 — Sugestões de Melhoria (respostas escritas pelos servidores)</h3>
+          <p style="font-size:12px;color:#6b7280;margin-top:4px">${r92.length} servidor${r92.length!==1?'es':''} respondeu${r92.length!==1?'ram':''} esta questão</p>
+        </div>
+        <div class="report-card-body" style="display:flex;flex-direction:column;gap:10px">
+          ${r92.map((a,i) => `<div style="background:#f0fdf4;border-left:4px solid #1a7a4a;padding:14px 16px;border-radius:0 8px 8px 0;font-size:13px;line-height:1.7;color:#1a1f2e">
+            <span style="font-size:10px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px">Sugestão ${i+1}</span>
+            "${a}"
+          </div>`).join('')}
+        </div>
+      </div>` : ''}
+
+      <!-- PARTICIPANTES -->
+      <div class="report-card" style="margin-bottom:20px">
+        <div class="report-card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+          <div>
+            <h3>👥 Lista de Participantes (${participants.length} identificado${participants.length!==1?'s':''})</h3>
+            <p style="font-size:12px;color:#6b7280;margin-top:4px">⚠️ Estes dados ficam separados das respostas — não é possível cruzar quem respondeu o quê.</p>
+          </div>
+        </div>
+        <div class="report-card-body">
+          ${participants.length === 0 ? '<p style="color:#6b7280;font-size:13px">Nenhum participante registrado ainda.</p>' : `
+          <div style="overflow-x:auto">
+          <table style="width:100%;border-collapse:collapse;font-size:13px">
+            <thead><tr>
+              <th style="background:#f3f4f6;padding:10px 14px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;color:#6b7280;border-bottom:2px solid #d1d5db">#</th>
+              <th style="background:#f3f4f6;padding:10px 14px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;color:#6b7280;border-bottom:2px solid #d1d5db">Nome</th>
+              <th style="background:#f3f4f6;padding:10px 14px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;color:#6b7280;border-bottom:2px solid #d1d5db">Setor</th>
+              <th style="background:#f3f4f6;padding:10px 14px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;color:#6b7280;border-bottom:2px solid #d1d5db">E-mail</th>
+              <th style="background:#f3f4f6;padding:10px 14px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;color:#6b7280;border-bottom:2px solid #d1d5db">Data</th>
+            </tr></thead>
+            <tbody>${pRows}</tbody>
+          </table>
+          </div>`}
+        </div>
+      </div>
+    `;
 
     setTimeout(() => {
-      document.querySelectorAll('.chart-bar-fill[data-w]').forEach(b => b.style.width = b.dataset.w + '%');
+      document.querySelectorAll('[data-w]').forEach(b => b.style.width = b.dataset.w + '%');
     }, 100);
   }
 </script>
