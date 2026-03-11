@@ -670,7 +670,7 @@
     try {
       const snap = await getDocs(collection(db, "respostas"));
       const partSnap = await getDocs(collection(db, "participantes"));
-      const responses = snap.docs.map(d => d.data());
+      const responses = snap.docs.map(d => ({ _id: d.id, ...d.data() }));
       const participants = partSnap.docs.map(d => ({ id: d.id, ...d.data() }));
       const n = responses.length;
       hideLoading();
@@ -680,6 +680,21 @@
       document.getElementById('report-content').innerHTML = `<div style="text-align:center;padding:40px;color:#d94f3d">Erro ao carregar dados: ${err.message}</div>`;
     }
   }
+
+  // ---- APAGAR RESPOSTA INDIVIDUAL ----
+  window.apagarResposta = async function(id, num) {
+    if (!confirm(`Apagar a Resposta #${num}? Esta ação não pode ser desfeita.`)) return;
+    showLoading("Apagando resposta...");
+    try {
+      await deleteDoc(doc(db, "respostas", id));
+      hideLoading();
+      alert(`Resposta #${num} apagada com sucesso!`);
+      loadReport();
+    } catch(err) {
+      hideLoading();
+      alert("Erro ao apagar: " + err.message);
+    }
+  };
 
   // ---- ZERAR DADOS ----
   window.zerarDados = async function() {
@@ -1084,6 +1099,57 @@
           </div>`).join('')}
         </div>
       </div>` : ''}
+
+      <!-- RESPOSTAS INDIVIDUAIS -->
+      <div class="report-card" style="margin-bottom:20px">
+        <div class="report-card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+          <div>
+            <h3>📋 Respostas Individuais — Gerenciar</h3>
+            <p style="font-size:12px;color:#6b7280;margin-top:4px">Use esta tabela para identificar e apagar respostas de teste. As respostas são anônimas — identifique pelo número ou data.</p>
+          </div>
+        </div>
+        <div class="report-card-body">
+          <div style="background:#fffbeb;border:1px solid #fcd34d;border-radius:8px;padding:10px 14px;font-size:12px;color:#92400e;margin-bottom:16px">
+            ⚠️ <strong>Atenção:</strong> A exclusão é permanente e não pode ser desfeita. Use apenas para remover respostas de teste.
+          </div>
+          <div style="overflow-x:auto">
+          <table style="width:100%;border-collapse:collapse;font-size:13px">
+            <thead><tr>
+              <th style="background:#f3f4f6;padding:10px 14px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;color:#6b7280;border-bottom:2px solid #d1d5db">#</th>
+              <th style="background:#f3f4f6;padding:10px 14px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;color:#6b7280;border-bottom:2px solid #d1d5db">Data / Hora</th>
+              <th style="background:#f3f4f6;padding:10px 14px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;color:#6b7280;border-bottom:2px solid #d1d5db">PCA</th>
+              <th style="background:#f3f4f6;padding:10px 14px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;color:#6b7280;border-bottom:2px solid #d1d5db">Segregação</th>
+              <th style="background:#f3f4f6;padding:10px 14px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;color:#6b7280;border-bottom:2px solid #d1d5db">Conhecimento Lei</th>
+              <th style="background:#f3f4f6;padding:10px 14px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;color:#6b7280;border-bottom:2px solid #d1d5db">Ação</th>
+            </tr></thead>
+            <tbody>
+              ${responses.map((r, i) => {
+                const ts = r.timestamp && r.timestamp.toDate ? r.timestamp.toDate().toLocaleString('pt-BR') : '—';
+                const pcaMap = { nenhuma:'Nenhuma', baixa:'Baixa', media:'Média', alta:'Alta' };
+                const segMap = { plena:'Plena', parcial:'Parcial', minima:'Mínima', ausente:'Ausente' };
+                const leiMap = { aprofundado:'Aprofundado', moderado:'Moderado', basico:'Básico', insuficiente:'Insuficiente' };
+                const isFirst = i === 0;
+                return `<tr style="${isFirst ? 'background:#fffbeb' : ''}">
+                  <td style="padding:10px 14px;border-bottom:1px solid #f0f0f0;font-weight:600;color:#6b7280">
+                    #${i+1}${isFirst ? ' <span style="font-size:10px;background:#fcd34d;color:#92400e;padding:2px 6px;border-radius:4px;margin-left:4px">1ª resposta</span>' : ''}
+                  </td>
+                  <td style="padding:10px 14px;border-bottom:1px solid #f0f0f0;font-size:12px;color:#374151">${ts}</td>
+                  <td style="padding:10px 14px;border-bottom:1px solid #f0f0f0">${pcaMap[r.q1_1] || '—'}</td>
+                  <td style="padding:10px 14px;border-bottom:1px solid #f0f0f0">${segMap[r.q1_2] || '—'}</td>
+                  <td style="padding:10px 14px;border-bottom:1px solid #f0f0f0">${leiMap[r.q7_2] || '—'}</td>
+                  <td style="padding:10px 14px;border-bottom:1px solid #f0f0f0">
+                    <button onclick="apagarResposta('${r._id}', ${i+1})"
+                      style="background:#fef2f2;border:1px solid #fca5a5;color:#dc2626;padding:5px 12px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Sora',sans-serif">
+                      🗑 Apagar
+                    </button>
+                  </td>
+                </tr>`;
+              }).join('')}
+            </tbody>
+          </table>
+          </div>
+        </div>
+      </div>
 
       <!-- PARTICIPANTES -->
       <div class="report-card" style="margin-bottom:20px">
