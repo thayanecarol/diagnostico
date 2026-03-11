@@ -950,6 +950,55 @@
         </div>
       </div>
 
+      <!-- GERENCIAR RESPOSTAS -->
+      <div class="report-card" style="margin-bottom:20px;border:2px solid #fca5a5">
+        <div class="report-card-header" style="background:#fef2f2;border-bottom:2px solid #fca5a5">
+          <h3 style="color:#dc2626">🗑 Gerenciar Respostas — Apagar Teste</h3>
+          <p style="font-size:12px;color:#6b7280;margin-top:4px">Use esta tabela para apagar respostas de teste. A <strong>1ª resposta</strong> está destacada em amarelo.</p>
+        </div>
+        <div class="report-card-body">
+          <div style="background:#fffbeb;border:1px solid #fcd34d;border-radius:8px;padding:10px 14px;font-size:12px;color:#92400e;margin-bottom:16px">
+            ⚠️ <strong>Atenção:</strong> A exclusão é permanente. Identifique o teste pela data/hora ou por ser a resposta mais antiga.
+          </div>
+          <div style="overflow-x:auto">
+          <table style="width:100%;border-collapse:collapse;font-size:13px">
+            <thead><tr>
+              <th style="background:#f3f4f6;padding:10px 14px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;color:#6b7280;border-bottom:2px solid #d1d5db">#</th>
+              <th style="background:#f3f4f6;padding:10px 14px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;color:#6b7280;border-bottom:2px solid #d1d5db">Data / Hora</th>
+              <th style="background:#f3f4f6;padding:10px 14px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;color:#6b7280;border-bottom:2px solid #d1d5db">PCA</th>
+              <th style="background:#f3f4f6;padding:10px 14px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;color:#6b7280;border-bottom:2px solid #d1d5db">Segregação</th>
+              <th style="background:#f3f4f6;padding:10px 14px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;color:#6b7280;border-bottom:2px solid #d1d5db">Conhecimento Lei</th>
+              <th style="background:#f3f4f6;padding:10px 14px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;color:#6b7280;border-bottom:2px solid #d1d5db">Ação</th>
+            </tr></thead>
+            <tbody>
+              ${responses.map((r, i) => {
+                const ts = r.timestamp && r.timestamp.toDate ? r.timestamp.toDate().toLocaleString('pt-BR') : '—';
+                const pcaMap = {nenhuma:'Nenhuma',baixa:'Baixa',media:'Média',alta:'Alta'};
+                const segMap = {plena:'Plena',parcial:'Parcial',minima:'Mínima',ausente:'Ausente'};
+                const leiMap = {aprofundado:'Aprofundado',moderado:'Moderado',basico:'Básico',insuficiente:'Insuficiente'};
+                const bg = i===0 ? 'background:#fffbeb' : '';
+                return `<tr style="${bg}">
+                  <td style="padding:10px 14px;border-bottom:1px solid #f0f0f0;font-weight:700;color:#374151">
+                    #${i+1} ${i===0 ? '<span style="font-size:10px;background:#fcd34d;color:#92400e;padding:2px 8px;border-radius:10px">1ª resposta</span>' : ''}
+                  </td>
+                  <td style="padding:10px 14px;border-bottom:1px solid #f0f0f0;font-size:12px">${ts}</td>
+                  <td style="padding:10px 14px;border-bottom:1px solid #f0f0f0">${pcaMap[r.q1_1]||'—'}</td>
+                  <td style="padding:10px 14px;border-bottom:1px solid #f0f0f0">${segMap[r.q1_2]||'—'}</td>
+                  <td style="padding:10px 14px;border-bottom:1px solid #f0f0f0">${leiMap[r.q7_2]||'—'}</td>
+                  <td style="padding:10px 14px;border-bottom:1px solid #f0f0f0">
+                    <button onclick="apagarResposta('${r._id}',${i+1})"
+                      style="background:#dc2626;border:none;color:white;padding:7px 14px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;font-family:sans-serif">
+                      🗑 Apagar
+                    </button>
+                  </td>
+                </tr>`;
+              }).join('')}
+            </tbody>
+          </table>
+          </div>
+        </div>
+      </div>
+
       <!-- LEGENDA -->
       ${legenda}
 
@@ -1099,57 +1148,6 @@
           </div>`).join('')}
         </div>
       </div>` : ''}
-
-      <!-- RESPOSTAS INDIVIDUAIS -->
-      <div class="report-card" style="margin-bottom:20px">
-        <div class="report-card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
-          <div>
-            <h3>📋 Respostas Individuais — Gerenciar</h3>
-            <p style="font-size:12px;color:#6b7280;margin-top:4px">Use esta tabela para identificar e apagar respostas de teste. As respostas são anônimas — identifique pelo número ou data.</p>
-          </div>
-        </div>
-        <div class="report-card-body">
-          <div style="background:#fffbeb;border:1px solid #fcd34d;border-radius:8px;padding:10px 14px;font-size:12px;color:#92400e;margin-bottom:16px">
-            ⚠️ <strong>Atenção:</strong> A exclusão é permanente e não pode ser desfeita. Use apenas para remover respostas de teste.
-          </div>
-          <div style="overflow-x:auto">
-          <table style="width:100%;border-collapse:collapse;font-size:13px">
-            <thead><tr>
-              <th style="background:#f3f4f6;padding:10px 14px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;color:#6b7280;border-bottom:2px solid #d1d5db">#</th>
-              <th style="background:#f3f4f6;padding:10px 14px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;color:#6b7280;border-bottom:2px solid #d1d5db">Data / Hora</th>
-              <th style="background:#f3f4f6;padding:10px 14px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;color:#6b7280;border-bottom:2px solid #d1d5db">PCA</th>
-              <th style="background:#f3f4f6;padding:10px 14px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;color:#6b7280;border-bottom:2px solid #d1d5db">Segregação</th>
-              <th style="background:#f3f4f6;padding:10px 14px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;color:#6b7280;border-bottom:2px solid #d1d5db">Conhecimento Lei</th>
-              <th style="background:#f3f4f6;padding:10px 14px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;color:#6b7280;border-bottom:2px solid #d1d5db">Ação</th>
-            </tr></thead>
-            <tbody>
-              ${responses.map((r, i) => {
-                const ts = r.timestamp && r.timestamp.toDate ? r.timestamp.toDate().toLocaleString('pt-BR') : '—';
-                const pcaMap = { nenhuma:'Nenhuma', baixa:'Baixa', media:'Média', alta:'Alta' };
-                const segMap = { plena:'Plena', parcial:'Parcial', minima:'Mínima', ausente:'Ausente' };
-                const leiMap = { aprofundado:'Aprofundado', moderado:'Moderado', basico:'Básico', insuficiente:'Insuficiente' };
-                const isFirst = i === 0;
-                return `<tr style="${isFirst ? 'background:#fffbeb' : ''}">
-                  <td style="padding:10px 14px;border-bottom:1px solid #f0f0f0;font-weight:600;color:#6b7280">
-                    #${i+1}${isFirst ? ' <span style="font-size:10px;background:#fcd34d;color:#92400e;padding:2px 6px;border-radius:4px;margin-left:4px">1ª resposta</span>' : ''}
-                  </td>
-                  <td style="padding:10px 14px;border-bottom:1px solid #f0f0f0;font-size:12px;color:#374151">${ts}</td>
-                  <td style="padding:10px 14px;border-bottom:1px solid #f0f0f0">${pcaMap[r.q1_1] || '—'}</td>
-                  <td style="padding:10px 14px;border-bottom:1px solid #f0f0f0">${segMap[r.q1_2] || '—'}</td>
-                  <td style="padding:10px 14px;border-bottom:1px solid #f0f0f0">${leiMap[r.q7_2] || '—'}</td>
-                  <td style="padding:10px 14px;border-bottom:1px solid #f0f0f0">
-                    <button onclick="apagarResposta('${r._id}', ${i+1})"
-                      style="background:#fef2f2;border:1px solid #fca5a5;color:#dc2626;padding:5px 12px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Sora',sans-serif">
-                      🗑 Apagar
-                    </button>
-                  </td>
-                </tr>`;
-              }).join('')}
-            </tbody>
-          </table>
-          </div>
-        </div>
-      </div>
 
       <!-- PARTICIPANTES -->
       <div class="report-card" style="margin-bottom:20px">
