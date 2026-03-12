@@ -188,6 +188,25 @@
 
 <!-- ============ FORM VIEW ============ -->
 <div class="view active" id="view-form">
+
+  <!-- TELA DE ENCERRAMENTO -->
+  <div id="encerrado-screen" class="hidden">
+    <div style="max-width:520px;margin:60px auto;text-align:center;padding:0 24px">
+      <div style="font-size:64px;margin-bottom:24px">⛔</div>
+      <h2 style="font-size:26px;font-weight:700;color:#1a1f2e;margin-bottom:12px">Questionário Encerrado</h2>
+      <p style="font-size:15px;color:#6b7280;line-height:1.7;margin-bottom:24px">
+        O prazo para envio de respostas foi encerrado.<br>
+        Agradecemos a participação de todos os servidores!
+      </p>
+      <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:20px 24px;display:inline-block">
+        <div style="font-size:13px;color:#166534;line-height:1.6">
+          📊 Os dados coletados estão sendo analisados.<br>
+          Em breve os resultados serão compartilhados.
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div id="form-content">
     <div class="progress-bar-wrap">
       <div class="progress-bar-bg"><div class="progress-bar-fill" id="progress-fill"></div></div>
@@ -588,6 +607,10 @@
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
 
+  // ⚙️ CONTROLE DE ABERTURA DO FORMULÁRIO
+  // Mude para false para encerrar e para true para reabrir
+  const FORMULARIO_ABERTO = true;
+
   // Hash da senha — nunca exposta no código
   // SHA-256 de "thay2026*"
   const ADMIN_HASH = "631a22cc072d7a3e705ee6a303d2572c838ed0619fa54177bc69a68231ac323a";
@@ -595,6 +618,12 @@
   async function sha256(str) {
     const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
     return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,"0")).join("");
+  }
+
+  // ---- VERIFICAR SE FORMULÁRIO ESTÁ ABERTO ----
+  if (!FORMULARIO_ABERTO) {
+    document.getElementById('form-content').classList.add('hidden');
+    document.getElementById('encerrado-screen').classList.remove('hidden');
   }
 
   // ---- FORM SUBMIT ----
@@ -622,6 +651,13 @@
     data.q9_1 = fd.get('q9_1') || '';
     data.q9_2 = fd.get('q9_2') || '';
     data.q9_3 = fd.get('q9_3') || '';
+
+    // Bloqueia se formulário estiver fechado
+    if (!FORMULARIO_ABERTO) {
+      hideLoading();
+      alert("O questionário está encerrado e não aceita mais respostas.");
+      return;
+    }
 
     // Valida identificação
     const nome = document.getElementById('id_nome').value.trim();
