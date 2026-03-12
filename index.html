@@ -582,6 +582,7 @@
       <h2>📊 Relatório — Lei 14.133/2021</h2>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn-export" onclick="exportCSV()">⬇ Exportar CSV</button>
+        <button class="btn-export" id="btn-toggle-status" onclick="toggleStatus()" style="border-color:#d94f3d;color:#d94f3d">🔴 Encerrar Questionário</button>
         <button class="btn-export" onclick="zerarDados()" style="border-color:#d94f3d;color:#d94f3d">🗑 Zerar Respostas</button>
       </div>
     </div>
@@ -592,7 +593,7 @@
 <!-- Firebase SDK -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getFirestore, collection, addDoc, getDocs, serverTimestamp, deleteDoc, doc, writeBatch }
+  import { getFirestore, collection, addDoc, getDocs, serverTimestamp, deleteDoc, doc, writeBatch, setDoc }
     from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
   const firebaseConfig = {
@@ -609,7 +610,7 @@
 
   // ⚙️ CONTROLE DE ABERTURA DO FORMULÁRIO
   // Mude para false para encerrar e para true para reabrir
-  const FORMULARIO_ABERTO = true;
+  let FORMULARIO_ABERTO = true;
 
   // Hash da senha — nunca exposta no código
   // SHA-256 de "thay2026*"
@@ -620,11 +621,19 @@
     return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,"0")).join("");
   }
 
-  // ---- VERIFICAR SE FORMULÁRIO ESTÁ ABERTO ----
-  if (!FORMULARIO_ABERTO) {
-    document.getElementById('form-content').classList.add('hidden');
-    document.getElementById('encerrado-screen').classList.remove('hidden');
-  }
+  // ---- VERIFICAR SE FORMULÁRIO ESTÁ ABERTO (lê do Firestore) ----
+  (async () => {
+    try {
+      const cfgSnap = await getDocs(collection(db, "config"));
+      cfgSnap.docs.forEach(d => {
+        if (d.id === 'status') FORMULARIO_ABERTO = d.data().aberto !== false;
+      });
+    } catch(e) {}
+    if (!FORMULARIO_ABERTO) {
+      document.getElementById('form-content').classList.add('hidden');
+      document.getElementById('encerrado-screen').classList.remove('hidden');
+    }
+  })();
 
   // ---- FORM SUBMIT ----
   document.getElementById('survey-form').addEventListener('submit', async function(e) {
@@ -709,6 +718,16 @@
       const responses = snap.docs.map(d => ({ _id: d.id, ...d.data() }));
       const participants = partSnap.docs.map(d => ({ id: d.id, ...d.data() }));
       const n = responses.length;
+
+      // Lê status do formulário no Firestore
+      try {
+        const cfgSnap = await getDocs(collection(db, "config"));
+        cfgSnap.docs.forEach(d => {
+          if (d.id === 'status') FORMULARIO_ABERTO = d.data().aberto !== false;
+        });
+      } catch(e) {}
+      atualizarBotaoStatus();
+
       hideLoading();
       renderReport(responses, n, participants);
     } catch(err) {
@@ -716,6 +735,51 @@
       document.getElementById('report-content').innerHTML = `<div style="text-align:center;padding:40px;color:#d94f3d">Erro ao carregar dados: ${err.message}</div>`;
     }
   }
+
+  // Atualiza visual do botão de status
+  function atualizarBotaoStatus() {
+    const btn = document.getElementById('btn-toggle-status');
+    if (!btn) return;
+    if (FORMULARIO_ABERTO) {
+      btn.textContent = '🔴 Encerrar Questionário';
+      btn.style.borderColor = '#d94f3d';
+      btn.style.color = '#d94f3d';
+      btn.style.background = 'white';
+    } else {
+      btn.textContent = '🟢 Reabrir Questionário';
+      btn.style.borderColor = '#1a7a4a';
+      btn.style.color = '#1a7a4a';
+      btn.style.background = 'white';
+    }
+  }
+
+  // Toggle status do formulário
+  window.toggleStatus = async function() {
+    const novoStatus = !FORMULARIO_ABERTO;
+    const msg = novoStatus
+      ? 'Reabrir o questionário? Os servidores poderão responder novamente.'
+      : 'Encerrar o questionário? Nenhuma nova resposta será aceita.';
+    if (!confirm(msg)) return;
+    showLoading(novoStatus ? "Reabrindo questionário..." : "Encerrando questionário...");
+    try {
+      await setDoc(doc(db, "config", "status"), { aberto: novoStatus });
+      FORMULARIO_ABERTO = novoStatus;
+      // Atualiza tela do formulário em tempo real
+      if (!FORMULARIO_ABERTO) {
+        document.getElementById('form-content').classList.add('hidden');
+        document.getElementById('encerrado-screen').classList.remove('hidden');
+      } else {
+        document.getElementById('form-content').classList.remove('hidden');
+        document.getElementById('encerrado-screen').classList.add('hidden');
+      }
+      atualizarBotaoStatus();
+      hideLoading();
+      alert(novoStatus ? '✅ Questionário reaberto com sucesso!' : '⛔ Questionário encerrado. Nenhuma nova resposta será aceita.');
+    } catch(err) {
+      hideLoading();
+      alert("Erro: " + err.message);
+    }
+  };
 
   // ---- APAGAR RESPOSTA INDIVIDUAL ----
   window.apagarResposta = async function(id, num) {
